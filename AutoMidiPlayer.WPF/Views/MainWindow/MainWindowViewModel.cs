@@ -149,6 +149,16 @@ public class MainWindowViewModel : Conductor<IScreen>, IHandle<MidiFile>
 
         IsGameSelectorOpen = false;
         RefreshGameRunningState();
+
+        PortableSettingsProvider.SaveFailed += (_, ex) =>
+        {
+            if (System.Windows.Application.Current?.Dispatcher?.CheckAccess() == false)
+            {
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(() => ShowSettingsSaveFailedToast(ex));
+                return;
+            }
+            ShowSettingsSaveFailedToast(ex);
+        };
     }
 
     public IContainer Ioc { get; }
@@ -165,6 +175,19 @@ public class MainWindowViewModel : Conductor<IScreen>, IHandle<MidiFile>
     {
         // Title will be updated when playback starts via UpdateTitle()
         UpdateTitle();
+    }
+
+    public void ShowSettingsSaveFailedToast(Exception ex)
+    {
+        if (System.Windows.Application.Current?.Dispatcher?.CheckAccess() == false)
+        {
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() => ShowSettingsSaveFailedToast(ex)));
+            return;
+        }
+
+        SnackbarService.Danger(
+            "Failed to save settings",
+            ex.Message);
     }
 
     public void UpdateTitle()

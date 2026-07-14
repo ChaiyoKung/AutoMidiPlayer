@@ -13,6 +13,8 @@ namespace AutoMidiPlayer.Data.Properties;
 /// </summary>
 public class PortableSettingsProvider : SettingsProvider
 {
+    public static event EventHandler<Exception>? SaveFailed;
+
     private const string SettingsRootName = "configuration";
     private const string UserSettingsGroupName = "userSettings";
 
@@ -154,8 +156,27 @@ public class PortableSettingsProvider : SettingsProvider
 
     private static void SaveSettings(XDocument doc)
     {
-        // Ensure directory exists
-        AppPaths.EnsureDirectoryExists();
-        doc.Save(SettingsFilePath);
+        try
+        {
+            // Ensure directory exists
+            AppPaths.EnsureDirectoryExists();
+            doc.Save(SettingsFilePath);
+        }
+        catch (IOException ex)
+        {
+            // Ignore if disk is full or file is locked
+            System.Diagnostics.Debug.WriteLine($"Failed to save settings: {ex.Message}");
+            Logger.Log("Failed to save settings due to IOException.");
+            Logger.LogException(ex);
+            SaveFailed?.Invoke(null, ex);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            // Ignore if permission denied
+            System.Diagnostics.Debug.WriteLine($"Failed to save settings: {ex.Message}");
+            Logger.Log("Failed to save settings due to UnauthorizedAccessException.");
+            Logger.LogException(ex);
+            SaveFailed?.Invoke(null, ex);
+        }
     }
 }

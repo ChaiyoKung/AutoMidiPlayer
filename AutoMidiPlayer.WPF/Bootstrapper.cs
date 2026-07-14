@@ -412,6 +412,9 @@ public class Bootstrapper : Bootstrapper<MainWindowViewModel>
         // Register GlobalHotkeyService as singleton
         builder.Bind<Services.GlobalHotkeyService>().ToSelf().InSingletonScope();
         
+        // Register DbService as singleton
+        builder.Bind<Services.IDbService>().To<Services.DbService>().InSingletonScope();
+        
         // Register UpdateService as singleton
         builder.Bind<Services.UpdateService>().ToSelf().InSingletonScope();
 

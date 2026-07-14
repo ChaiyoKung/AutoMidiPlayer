@@ -752,9 +752,12 @@ public class InstrumentViewModel : Screen, IHandle<MidiFile>, IHandle<ListenMode
         var song = _main.QueueView.OpenedFile?.Song;
         if (song == null) return;
 
-        await using var db = _ioc.Get<PlayerContext>();
-        db.Songs.Update(song);
-        await db.SaveChangesAsync();
+        var dbService = _ioc.Get<AutoMidiPlayer.WPF.Services.IDbService>();
+        await dbService.ExecuteLockedAsync(async db =>
+        {
+            db.Songs.Update(song);
+            await db.SaveChangesAsync();
+        });
     }
 
     [UsedImplicitly]

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using AutoMidiPlayer.Data;
+using AutoMidiPlayer.Data.Midi.Extensions;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
 using Melanchall.DryWetMidi.Multimedia;
@@ -70,6 +71,7 @@ public sealed class MidiShowPreviewPlayer : IDisposable
 
         using var stream = new MemoryStream(data);
         var midi = MidiFile.Read(stream, lenient);
+        midi.RemoveMalformedSysExEvents();
 
         lock (_lock)
         {

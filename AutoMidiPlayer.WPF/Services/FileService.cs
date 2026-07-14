@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMidiPlayer.Data;
 using AutoMidiPlayer.Data.Entities;
+using AutoMidiPlayer.Data.Midi.Extensions;
 using AutoMidiPlayer.Data.Properties;
 using AutoMidiPlayer.WPF.Dialogs;
 using AutoMidiPlayer.WPF.ViewModels;
@@ -75,6 +76,7 @@ public class FileService(IContainer ioc)
         try
         {
             var midi = Melanchall.DryWetMidi.Core.MidiFile.Read(filePath);
+            midi.RemoveMalformedSysExEvents();
             var tempo = midi.GetTempoMap().GetTempoAtTime(new MetricTimeSpan(0));
             var nativeBpm = tempo.BeatsPerMinute;
             var fileDate = File.GetLastWriteTime(filePath);

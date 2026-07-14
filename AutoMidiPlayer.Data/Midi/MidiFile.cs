@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using AutoMidiPlayer.Data.Entities;
+using AutoMidiPlayer.Data.Midi.Extensions;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
 using Melanchall.DryWetMidi.Tools;
@@ -86,6 +87,7 @@ public class MidiFile : Screen
         Logger.LogMidiParser($"MIDI_LOAD_BEGIN path='{Path}'");
 
         Midi = Melanchall.DryWetMidi.Core.MidiFile.Read(Path, _settings);
+        Midi.RemoveMalformedSysExEvents();
         // Store the original tempo map so it's preserved even when tracks are modified
         OriginalTempoMap = Midi.GetTempoMap();
 

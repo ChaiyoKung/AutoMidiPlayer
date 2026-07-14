@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMidiPlayer.Data;
+using AutoMidiPlayer.Data.Midi.Extensions;
 using AutoMidiPlayer.WPF.Controls.Snackbar;
 using AutoMidiPlayer.WPF.Services.MidiShow;
 using JetBrains.Annotations;
@@ -998,6 +999,7 @@ public sealed class OnlineMidiViewModel : Screen
 
             using var stream = new MemoryStream(data);
             var midi = Melanchall.DryWetMidi.Core.MidiFile.Read(stream, lenient);
+            midi.RemoveMalformedSysExEvents();
             
             if (trackNames != null && trackNames.Count > 0)
             {

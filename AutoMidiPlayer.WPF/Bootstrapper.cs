@@ -29,8 +29,20 @@ namespace AutoMidiPlayer.WPF;
 
 public class Bootstrapper : Bootstrapper<MainWindowViewModel>
 {
-    private static readonly object DatabaseInitializationLock = new();
+
     private static bool _databaseInitialized;
+    private System.Threading.Mutex? _singleInstanceMutex;
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsIconic(IntPtr hWnd);
+
+    private const int SW_RESTORE = 9;
 
     private static readonly (string ColumnName, string SqlType)[] SongColumnMigrations =
     [
@@ -66,7 +78,7 @@ public class Bootstrapper : Bootstrapper<MainWindowViewModel>
         string productName = GetProductName();
         string appVersionDisplay = GetAppVersion();
         Logger.LogStartup(productName, appVersionDisplay);
-        Logger.LogApp($"Logs directory: {Logger.GetLogsDirectoryPath()}");
+        // Logger.LogApp($"Logs directory: {Logger.GetLogsDirectoryPath()}");
         AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {
             Logger.LogApp($"{GetProductName()} v{GetAppVersion()} Stopping");
@@ -103,6 +115,43 @@ public class Bootstrapper : Bootstrapper<MainWindowViewModel>
             Logger.LogException(ex);
         }
     }
+
+    protected override void OnStart()
+    {
+        _singleInstanceMutex = new Mutex(true, "AutoMidiPlayer_SingleInstance", out bool createdNew);
+        if (!createdNew)
+        {
+            BringExistingInstanceToFront();
+            Environment.Exit(0);
+            return;
+        }
+        
+        base.OnStart();
+    }
+
+    private static void BringExistingInstanceToFront()
+    {
+        var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
+        var processes = System.Diagnostics.Process.GetProcessesByName(currentProcess.ProcessName);
+
+        foreach (var process in processes)
+        {
+            if (process.Id != currentProcess.Id)
+            {
+                var hWnd = process.MainWindowHandle;
+                if (hWnd != IntPtr.Zero)
+                {
+                    if (IsIconic(hWnd))
+                    {
+                        ShowWindow(hWnd, SW_RESTORE);
+                    }
+                    SetForegroundWindow(hWnd);
+                }
+                break;
+            }
+        }
+    }
+
 
     private static void EnsureQueueLoopModeSetting()
     {
@@ -142,27 +191,38 @@ public class Bootstrapper : Bootstrapper<MainWindowViewModel>
         if (_databaseInitialized)
             return;
 
-        lock (DatabaseInitializationLock)
+        using (var mutex = new System.Threading.Mutex(false, "AutoMidiPlayer_DB_Init"))
         {
-            if (_databaseInitialized)
-                return;
-
-            db.Database.EnsureCreated();
-
-            var existingSongColumns = GetSongTableColumns(db);
-            if (existingSongColumns.Count > 0)
+            var hasHandle = false;
+            try
             {
-                RenameSongColumn(db, existingSongColumns, "Author", "Artist");
-                RenameSongColumn(db, existingSongColumns, "DefaultKey", "BaseKey");
+                hasHandle = mutex.WaitOne(TimeSpan.FromSeconds(30), false);
+                
+                if (_databaseInitialized)
+                    return;
 
-                foreach (var (columnName, sqlType) in SongColumnMigrations)
+                db.Database.EnsureCreated();
+
+                var existingSongColumns = GetSongTableColumns(db);
+                if (existingSongColumns.Count > 0)
                 {
-                    if (!existingSongColumns.Contains(columnName))
-                        AddSongColumnIfMissing(db, columnName, sqlType);
-                }
-            }
+                    RenameSongColumn(db, existingSongColumns, "Author", "Artist");
+                    RenameSongColumn(db, existingSongColumns, "DefaultKey", "BaseKey");
 
-            _databaseInitialized = true;
+                    foreach (var (columnName, sqlType) in SongColumnMigrations)
+                    {
+                        if (!existingSongColumns.Contains(columnName))
+                            AddSongColumnIfMissing(db, columnName, sqlType);
+                    }
+                }
+
+                _databaseInitialized = true;
+            }
+            finally
+            {
+                if (hasHandle)
+                    mutex.ReleaseMutex();
+            }
         }
     }
 

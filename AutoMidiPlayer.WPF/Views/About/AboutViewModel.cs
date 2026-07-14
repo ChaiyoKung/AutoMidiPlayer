@@ -323,7 +323,8 @@ public class AboutViewModel : Screen
                     var login = element.GetProperty("login").GetString() ?? "Unknown";
 
                     if (login.Equals("dependabot[bot]", StringComparison.OrdinalIgnoreCase) ||
-                        login.Equals("github-actions[bot]", StringComparison.OrdinalIgnoreCase))
+                        login.Equals("github-actions[bot]", StringComparison.OrdinalIgnoreCase) ||
+                        login.Equals("sentry[bot]", StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }

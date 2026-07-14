@@ -6,7 +6,7 @@
         <UseWPF>true</UseWPF>
         <StartupObject>AutoMidiPlayer.WPF.App</StartupObject>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <Version>7.10.15</Version>
+        <Version>7.10.16</Version>
         <ApplicationIcon>Resources\logo.ico</ApplicationIcon>
         <Nullable>enable</Nullable>
         <RepositoryUrl>https://github.com/Jed556/AutoMidiPlayer</RepositoryUrl>
@@ -27,7 +27,7 @@
         <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
         <PackageReference Include="Melanchall.DryWetMidi" Version="8.0.3" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.5" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.5" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.5" />
         <PackageReference Include="PropertyChanged.Fody" Version="4.1.0" PrivateAssets="All" />
         <PackageReference Include="Sentry" Version="6.6.0" />
@@ -72,3 +72,4 @@
     </ItemGroup>
 
 </Project>
+ 

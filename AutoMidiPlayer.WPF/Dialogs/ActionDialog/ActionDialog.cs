@@ -131,12 +131,13 @@ public partial class ActionDialog : ContentDialog
 
         if (request.TopRightButton is not null)
         {
-            var trButton = new Wpf.Ui.Controls.Button
+            var trButton = new Controls.Button
             {
-                Icon = new SymbolIcon { Symbol = request.TopRightButton.Icon },
-                Appearance = ControlAppearance.Transparent,
-                Margin = new Thickness(16, -16, -16, 0),
-                VerticalAlignment = VerticalAlignment.Top
+                Icon = request.TopRightButton.Icon,
+                Variant = Controls.ButtonVariant.Ghost,
+                Margin = new Thickness(16, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Right
             };
 
             trButton.Click += async (s, e) =>
@@ -197,6 +198,11 @@ public partial class ActionDialog : ContentDialog
                 foreach (var buttonType in buttonsToHide)
                     DialogHelper.CollapseDialogButton(this, buttonType);
             };
+        }
+
+        if (request.HideFooter)
+        {
+            DialogHelper.HideActionButtonsArea(this);
         }
 
         DataContext = this;

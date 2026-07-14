@@ -256,14 +256,6 @@ public class Bootstrapper : Bootstrapper<MainWindowViewModel>
     // crash dialogs, where showing each dialog allocates another window and re-throws.
     private static int _handlingDispatcherException;
 
-    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
-    {
-        // If we're already handling an exception, swallow this one to break the cascade.
-        if (Interlocked.CompareExchange(ref _handlingDispatcherException, 1, 0) != 0)
-        {
-            e.Handled = true;
-            return;
-        }
     // HRESULT DWM_E_COMPOSITIONDISABLED: thrown by WPF's WindowChrome when it tries to
     // extend the glass/Mica frame (DwmExtendFrameIntoClientArea) while desktop composition
     // is disabled (e.g. RDP/remote sessions). It is cosmetic and safe to ignore.
@@ -274,24 +266,24 @@ public class Bootstrapper : Bootstrapper<MainWindowViewModel>
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        if (IsBenignDwmCompositionException(e.Exception))
+        // If we're already handling an exception, swallow this one to break the cascade.
+        if (Interlocked.CompareExchange(ref _handlingDispatcherException, 1, 0) != 0)
         {
-            // Desktop composition is disabled; the frame just can't be extended right now.
-            // Recover silently instead of crashing or filing a noisy error report.
-            Logger.Log("Ignoring benign DWM composition-disabled exception (0x80263001).");
             e.Handled = true;
             return;
         }
 
-        Logger.Log("=== DISPATCHER UNHANDLED EXCEPTION ===");
-        Logger.LogException(e.Exception);
-        SentrySdk.CaptureException(e.Exception);
-
-        // Flush to ensure the crash event reaches Sentry before the app may terminate
-        SentrySdk.FlushAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
-
         try
         {
+            if (IsBenignDwmCompositionException(e.Exception))
+            {
+                // Desktop composition is disabled; the frame just can't be extended right now.
+                // Recover silently instead of crashing or filing a noisy error report.
+                Logger.Log("Ignoring benign DWM composition-disabled exception (0x80263001).");
+                e.Handled = true;
+                return;
+            }
+
             Logger.Log("=== DISPATCHER UNHANDLED EXCEPTION ===");
             Logger.LogException(e.Exception);
             SentrySdk.CaptureException(e.Exception);

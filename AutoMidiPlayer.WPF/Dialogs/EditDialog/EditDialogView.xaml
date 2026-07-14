@@ -60,7 +60,8 @@
                    FontWeight="SemiBold"
                    Margin="0,0,0,4"/>
         <ui:TextBox x:Name="ArtistBox"
-                    Margin="0,0,0,12"/>
+                    Margin="0,0,0,12"
+                    ClearButtonEnabled="False"/>
 
         <Grid Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
@@ -162,7 +163,8 @@
                                VerticalAlignment="Center"/>
                     <ui:TextBox x:Name="MergeMillisecondsBox"
                                 Width="80"
-                                IsEnabled="False"/>
+                                IsEnabled="False"
+                                ClearButtonEnabled="False"/>
                 </StackPanel>
             </StackPanel>
         </Grid>

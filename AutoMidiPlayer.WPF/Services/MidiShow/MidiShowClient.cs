@@ -339,7 +339,7 @@ public sealed class MidiShowClient : IDisposable
                             if (!string.IsNullOrWhiteSpace(inst))
                                 instruments.Add(inst);
                         }
-                        
+
                         if (instruments.Count > 0)
                             trackNames[trackIdx] = string.Join(", ", instruments);
                     }
@@ -472,8 +472,7 @@ public sealed class MidiShowClient : IDisposable
         if (Has("恶意抓取", "暂时关闭", "试听", "OGG", "scraping", "temporarily disabled"))
             return new MidiShowException(MidiShowDownloadError.Unavailable,
                 "MidiShow has temporarily disabled MIDI downloads on their side (an anti-scraping " +
-                "measure). This is server-side and affects everyone — please try again later. " +
-                "Browsing and search still work.");
+                "measure). Please try again later. Browsing and search still work.");
 
         // Risk control / abnormal-activity flag on the account. 风控 = risk control,
         // 异常 = abnormal, 频繁 = frequent, 验证 = (extra) verification. The account is valid but
@@ -885,7 +884,7 @@ public sealed class MidiShowClient : IDisposable
                     var num = CleanText(cols[0].Groups[1].Value);
                     var name = CleanText(cols[1].Groups[1].Value);
                     var channel = CleanText(cols[2].Groups[1].Value);
-                    
+
                     var instHtml = cols[3].Groups[1].Value;
                     var inst = WebUtility.HtmlDecode(Regex.Replace(instHtml, "<[^>]+>", ", ")).Trim().Trim(',');
                     inst = Regex.Replace(inst, "(^,\\s*)|(,\\s*$)", "").Trim();

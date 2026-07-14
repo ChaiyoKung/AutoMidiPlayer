@@ -127,10 +127,10 @@
                 <ui:DropDownButton.Flyout>
                     <ContextMenu>
                         <MenuItem Header="Newest" Tag="" Click="Sort_Click">
-                            <MenuItem.Icon><ui:SymbolIcon Symbol="CalendarArrowDown24"/></MenuItem.Icon>
+                            <MenuItem.Icon><ui:SymbolIcon Symbol="ArrowTrending12"/></MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Oldest" Tag="time_asc" Click="Sort_Click">
-                            <MenuItem.Icon><ui:SymbolIcon Symbol="ArrowSortUpLines24"/></MenuItem.Icon>
+                            <MenuItem.Icon><ui:SymbolIcon Symbol="Clock12"/></MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
                         <MenuItem Header="Most popular" Tag="popularity" Click="Sort_Click">

@@ -9,6 +9,25 @@ namespace AutoMidiPlayer.Data;
 /// </summary>
 public static class AppPaths
 {
+    public static string DistributionType
+    {
+        get
+        {
+#if DEBUG
+            return "Development";
+#else
+            var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
+            if (exeDir != null && File.Exists(Path.Combine(exeDir, "AutoMidiPlayer.Data.dll")))
+            {
+                return "Net-Install";
+            }
+            return "Portable";
+#endif
+        }
+    }
+
+    public static bool IsNetInstall => DistributionType == "Net-Install" || DistributionType == "Development";
+
     /// <summary>
     /// Base application data directory: %LocalAppData%\AutoMidiPlayer
     /// </summary>

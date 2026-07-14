@@ -151,8 +151,7 @@ public partial class UpdateView : UserControl, INotifyPropertyChanged
         DataContext = this;
         
         // Auto-detect default if possible (rudimentary check: if there is no setup/installer sign, assume portable)
-        var exeName = Path.GetFileName(Environment.ProcessPath ?? "");
-        if (exeName.Contains("net-install", StringComparison.OrdinalIgnoreCase))
+        if (AutoMidiPlayer.Data.AppPaths.IsNetInstall)
             SelectedVersionType = "Net-Install";
     }
 

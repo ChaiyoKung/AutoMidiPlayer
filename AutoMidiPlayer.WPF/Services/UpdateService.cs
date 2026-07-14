@@ -90,8 +90,7 @@ public class UpdateService
     {
         try
         {
-            var isNetInstall = Path.GetFileName(Environment.ProcessPath ?? "").Contains("net-install", StringComparison.OrdinalIgnoreCase);
-            var versionType = isNetInstall ? "Net-Install" : "Portable";
+            var versionType = AutoMidiPlayer.Data.AppPaths.IsNetInstall ? "Net-Install" : "Portable";
 
             var result = await BackgroundDownloadUpdateAsync(version, versionType);
             BackgroundDownloadCompleted?.Invoke(this, (result.Success, version.Version.ToString(), result.ErrorMessage));

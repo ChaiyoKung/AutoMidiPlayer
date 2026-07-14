@@ -167,6 +167,8 @@ public static class Logger
     public static void LogStartup(string productName, string appVersionDisplay, [CallerMemberName] string? caller = null, [CallerFilePath] string? file = null, [CallerLineNumber] int line = 0)
     {
         WriteLogLine(AppLogPath, $"{productName} v{appVersionDisplay} Starting", caller, file, line);
+        
+        WriteLogLine(AppLogPath, $"Distribution: {AppPaths.DistributionType}", caller, file, line);
     }
 
     public static void ClearLog()

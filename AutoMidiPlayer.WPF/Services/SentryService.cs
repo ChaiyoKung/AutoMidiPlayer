@@ -185,6 +185,11 @@ public class SentryService : ISentryService
             });
         });
 
+        SentrySdk.ConfigureScope(scope => 
+        {
+            scope.SetTag("distribution", AppPaths.DistributionType.ToLowerInvariant());
+        });
+
         if (Settings.Default.ReportedOptEventStatus != 1)
         {
             SentrySdk.CaptureMessage("User opted into telemetry", SentryLevel.Info);

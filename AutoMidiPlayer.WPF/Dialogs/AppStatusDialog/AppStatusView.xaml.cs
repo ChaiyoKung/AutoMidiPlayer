@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -91,6 +92,12 @@ public partial class AppStatusView : UserControl
         catch (UnauthorizedAccessException ex)
         {
             Logger.LogStep("STATUS_MARKER_AUTH_ERROR", $"path='{AppPaths.AppStatusFilePath}' | message='{ex.Message}'");
+            return;
+        }
+        catch (Exception ex) when (ex is FormatException or CryptographicException)
+        {
+            Logger.LogStep("STATUS_MARKER_DECRYPT_ERROR", $"path='{AppPaths.AppStatusFilePath}' | message='{ex.Message}'");
+            try { File.Delete(AppPaths.AppStatusFilePath); } catch { /* best-effort cleanup */ }
             return;
         }
 

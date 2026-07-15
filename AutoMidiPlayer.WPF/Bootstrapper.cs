@@ -109,6 +109,12 @@ public class Bootstrapper : Bootstrapper<MainWindowViewModel>
         {
             var sentryService = Container.Get<AutoMidiPlayer.WPF.Services.ISentryService>();
             sentryService.Initialize();
+
+            // Report app start for Daily Active User tracking
+            if (SentrySdk.IsEnabled)
+            {
+                SentrySdk.CaptureMessage("User started app", SentryLevel.Info);
+            }
         }
         catch (Exception ex)
         {

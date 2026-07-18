@@ -33,6 +33,11 @@ public class Button : System.Windows.Controls.Button
         DefaultStyleKeyProperty.OverrideMetadata(typeof(Button), new FrameworkPropertyMetadata(typeof(Button)));
     }
 
+    public Button()
+    {
+        Loaded += (s, e) => UpdateStyle();
+    }
+
     public static readonly DependencyProperty VariantProperty =
         DependencyProperty.Register(
             nameof(Variant), 

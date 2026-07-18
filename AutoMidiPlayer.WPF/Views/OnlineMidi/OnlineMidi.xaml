@@ -66,9 +66,9 @@
                         VerticalAlignment="Center"
                         KeyDown="SearchBox_KeyDown"/>
 
-            <ui:Button Grid.Row="0"
+            <controls:Button Grid.Row="0"
                        Grid.Column="1"
-                       Appearance="Primary"
+                       Variant="Filled" ColorMode="Accent"
                        Margin="8,0,0,0"
                        Padding="16,7"
                        VerticalAlignment="Center"
@@ -143,46 +143,40 @@
                 </ui:DropDownButton.Flyout>
             </ui:DropDownButton>
 
-            <ui:Button Appearance="Secondary"
+            <controls:Button Variant="Filled" ColorMode="Default"
                        Margin="8,0,0,0"
                        Padding="10,7"
                        VerticalAlignment="Center"
                        ToolTip="Refresh list"
-                       Command="{s:Action Reload}">
-                <ui:SymbolIcon Symbol="ArrowSync24"
-                               FontSize="16"/>
-            </ui:Button>
+                       Command="{s:Action Reload}"
+                       Icon="ArrowSync24" />
             </StackPanel>
 
             <!-- Account: a toolbar button that opens an account-manager popup. The pool can hold
                  several MidiShow accounts (password- or cookie-based); downloads rotate across
                  them and fail over when one is limited. -->
             <Grid Grid.Row="0" Grid.Column="2" x:Name="AccountAnchor" Margin="8,0,0,0">
-                <ui:Button Appearance="Primary"
-                           Padding="13,7"
-                           VerticalAlignment="Center"
-                           ToolTip="Add a MidiShow account"
-                           Command="{s:Action ToggleAccountFlyout}"
-                           Visibility="{Binding HasAnyAccount, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                    <StackPanel Orientation="Horizontal">
-                        <ui:SymbolIcon Symbol="PersonCircle24" FontSize="16" Margin="0,0,6,0"
-                                       Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                        <TextBlock Text="Sign in"/>
-                    </StackPanel>
-                </ui:Button>
+                <controls:Button Variant="Filled" ColorMode="Accent"
+                                 Icon="PersonCircle24"
+                                 Content="Sign in"
+                                 Padding="13,7"
+                                 VerticalAlignment="Center"
+                                 ToolTip="Add a MidiShow account"
+                                 Command="{s:Action ToggleAccountFlyout}"
+                                 Visibility="{Binding HasAnyAccount, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
 
-                <ui:Button Appearance="Secondary"
-                           Padding="11,7"
-                           VerticalAlignment="Center"
-                           ToolTip="{Binding AccountSummary}"
-                           Command="{s:Action ToggleAccountFlyout}"
-                           Visibility="{Binding HasAnyAccount, Converter={x:Static s:BoolToVisibilityConverter.Instance}}">
+                <controls:Button Variant="Filled" ColorMode="Default"
+                                 Padding="11,7"
+                                 VerticalAlignment="Center"
+                                 ToolTip="{Binding AccountSummary}"
+                                 Command="{s:Action ToggleAccountFlyout}"
+                                 Visibility="{Binding HasAnyAccount, Converter={x:Static s:BoolToVisibilityConverter.Instance}}">
                     <StackPanel Orientation="Horizontal">
                         <ui:SymbolIcon Symbol="PeopleTeam24" FontSize="16" Foreground="#2EA043" Margin="0,0,6,0"/>
                         <TextBlock Text="{Binding AccountButtonText}" Margin="0,0,6,0"/>
                         <ui:SymbolIcon Symbol="ChevronDown12" FontSize="11" Opacity="0.7"/>
                     </StackPanel>
-                </ui:Button>
+                </controls:Button>
 
                 <Popup x:Name="AccountPopup"
                        PlacementTarget="{Binding ElementName=AccountAnchor}"
@@ -298,8 +292,8 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Play / pause -->
-                <ui:Button Grid.Column="0"
-                           Appearance="Secondary"
+                <controls:Button Grid.Column="0"
+                           Variant="Filled" ColorMode="Default"
                            Padding="8,6"
                            VerticalAlignment="Center"
                            ToolTip="Play / pause preview"
@@ -312,18 +306,19 @@
                                        Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
                                        Visibility="{Binding IsPreviewPlaying, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"/>
                     </Grid>
-                </ui:Button>
+                </controls:Button>
 
                 <!-- Stop -->
-                <ui:Button Grid.Column="1"
-                           Appearance="Secondary"
+                <controls:Button Grid.Column="1"
+                           Variant="Filled" ColorMode="Default"
                            Padding="8,6"
                            Margin="6,0,0,0"
                            VerticalAlignment="Center"
                            ToolTip="Stop preview"
                            Command="{s:Action StopPreview}">
-                    <ui:SymbolIcon Symbol="RecordStop24" FontSize="16"/>
-                </ui:Button>
+                    <ui:SymbolIcon Symbol="Stop24" FontSize="18"
+                                   Foreground="#C42B1C"/>
+                </controls:Button>
 
                 <!-- Title + seekbar -->
                 <StackPanel Grid.Column="2" Margin="14,0,12,0" VerticalAlignment="Center">
@@ -430,15 +425,13 @@
 
             <StackPanel Grid.Column="1"
                         Orientation="Horizontal">
-                <ui:Button Appearance="Secondary"
+                <controls:Button Variant="Filled" ColorMode="Default"
                            Padding="10,6"
                            Margin="0,0,6,0"
                            ToolTip="Previous page"
                            IsEnabled="{Binding CanGoToPreviousPage}"
-                           Command="{s:Action PreviousPage}">
-                    <ui:SymbolIcon Symbol="ChevronLeft24"
-                                   FontSize="15"/>
-                </ui:Button>
+                           Command="{s:Action PreviousPage}"
+                           Icon="ChevronLeft24" />
                 <Border Padding="12,0"
                         MinWidth="40"
                         VerticalAlignment="Stretch"
@@ -448,15 +441,13 @@
                                HorizontalAlignment="Center"
                                Text="{Binding CurrentPage}"/>
                 </Border>
-                <ui:Button Appearance="Secondary"
+                <controls:Button Variant="Filled" ColorMode="Default"
                            Padding="10,6"
                            Margin="6,0,0,0"
                            ToolTip="Next page"
                            IsEnabled="{Binding CanGoToNextPage}"
-                           Command="{s:Action NextPage}">
-                    <ui:SymbolIcon Symbol="ChevronRight24"
-                                   FontSize="15"/>
-                </ui:Button>
+                           Command="{s:Action NextPage}"
+                           Icon="ChevronRight24" />
             </StackPanel>
         </Grid>
 

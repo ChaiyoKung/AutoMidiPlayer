@@ -290,22 +290,14 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource AboutActionButtonStyle}"
-                                        Command="{s:Action OpenUrl}"
-                                        CommandParameter="{Binding Url}">
-                                    <Button.ToolTip>
-                                        <TextBlock Text="{Binding Tooltip}"
-                                                   FontSize="10"
-                                                   TextWrapping="NoWrap"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   MaxWidth="380"/>
-                                    </Button.ToolTip>
+                                <controls:Hyperlink Style="{StaticResource AboutActionButtonStyle}"
+                                                    NavigateUri="{Binding Url}">
                                     <StackPanel Orientation="Horizontal">
                                         <ui:SymbolIcon Symbol="{Binding IconSymbol, Mode=OneWay}" Margin="0,0,8,0" FontSize="16" />
                                         <TextBlock Text="{Binding Name}"
                                                    VerticalAlignment="Center"/>
                                     </StackPanel>
-                                </Button>
+                                </controls:Hyperlink>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

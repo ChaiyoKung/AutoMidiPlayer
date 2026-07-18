@@ -190,14 +190,27 @@ public class Hyperlink : System.Windows.Controls.Button
         if (content is not string text)
             return content;
 
-        return new TextBlock
+        var stackPanel = new StackPanel { Orientation = Orientation.Horizontal };
+        
+        stackPanel.Children.Add(new Wpf.Ui.Controls.SymbolIcon
+        {
+            Symbol = Wpf.Ui.Controls.SymbolRegular.Open16,
+            FontSize = 14,
+            Margin = new Thickness(0, 0, 6, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        stackPanel.Children.Add(new TextBlock
         {
             Text = text,
             FontSize = TooltipFontSize,
             TextWrapping = TextWrapping.NoWrap,
             TextTrimming = TextTrimming.CharacterEllipsis,
-            MaxWidth = TooltipMaxWidth
-        };
+            MaxWidth = TooltipMaxWidth,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        return stackPanel;
     }
 
     private object? GetResolvedPreviewToolTip()
@@ -208,9 +221,7 @@ public class Hyperlink : System.Windows.Controls.Button
         if (PreviewToolTip is not null)
             return PreviewToolTip;
 
-        return NavigateUri is not null
-            ? $"Open {NavigateUri}"
-            : null;
+        return NavigateUri?.ToString();
     }
 
     private void AnimateOpacity(double targetOpacity, TimeSpan duration, IEasingFunction easing)

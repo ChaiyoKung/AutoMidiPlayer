@@ -29,6 +29,7 @@ public partial class OnlineMidiView : UserControl
         {
             window.PreviewMouseDown += Window_PreviewMouseDown;
             window.Deactivated += Window_Deactivated;
+            window.Activated += Window_Activated;
         }
     }
 
@@ -39,6 +40,7 @@ public partial class OnlineMidiView : UserControl
         {
             window.PreviewMouseDown -= Window_PreviewMouseDown;
             window.Deactivated -= Window_Deactivated;
+            window.Activated -= Window_Activated;
         }
     }
 
@@ -76,11 +78,15 @@ public partial class OnlineMidiView : UserControl
         _keepOpenOnDeactivate = true;
     }
 
+    private void Window_Activated(object? sender, EventArgs e)
+    {
+        _keepOpenOnDeactivate = false;
+    }
+
     private void Window_Deactivated(object? sender, EventArgs e)
     {
         if (_keepOpenOnDeactivate)
         {
-            _keepOpenOnDeactivate = false;
             return;
         }
 

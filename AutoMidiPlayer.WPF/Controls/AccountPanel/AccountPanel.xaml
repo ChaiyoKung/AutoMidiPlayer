@@ -63,17 +63,16 @@
                                     <Run Text="{Binding StatusText, Mode=OneWay}"/>
                                 </TextBlock>
                             </StackPanel>
-                            <ui:Button Grid.Column="2" Appearance="Secondary" Padding="7,5" Margin="0,0,6,0"
+                            <controls:Button Grid.Column="2" Variant="Filled" ColorMode="Default" Padding="7,5" Margin="0,0,6,0"
                                        ToolTip="Copy this account's session cookies"
                                        Visibility="{Binding CanCopyCookies, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"
-                                       Click="CopyCookies_Click">
-                                <ui:SymbolIcon Symbol="Copy24" FontSize="14"/>
-                            </ui:Button>
-                            <ui:Button Grid.Column="3" Appearance="Secondary" Padding="7,5"
+                                       Click="CopyCookies_Click"
+                                       Icon="Copy24" />
+                            <controls:Button Grid.Column="3" Variant="Filled" ColorMode="Default" Padding="7,5"
                                        ToolTip="Remove this account"
                                        Click="RemoveAccount_Click">
                                 <ui:SymbolIcon Symbol="Delete24" FontSize="14" Foreground="#E04F4F"/>
-                            </ui:Button>
+                            </controls:Button>
                         </Grid>
                     </Border>
                 </DataTemplate>
@@ -98,50 +97,34 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <ui:Button x:Name="CreateAccountButton"
+                <controls:Button x:Name="CreateAccountButton"
                            Grid.Column="0"
-                           Appearance="Primary"
+                           Variant="Filled" ColorMode="Accent"
                            HorizontalAlignment="Stretch"
                            Padding="0,9"
-                           Click="CreateAccount_Click">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <ui:SymbolIcon Symbol="PersonAdd24" FontSize="14" Margin="0,0,5,0"
-                                       Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                        <TextBlock Text="Create account" FontSize="12.5"/>
-                    </StackPanel>
-                </ui:Button>
+                           Click="CreateAccount_Click"
+                           Icon="PersonAdd24"
+                           Content="Create account" />
 
-                <ui:Button Grid.Column="2"
-                           Appearance="Secondary"
+                <controls:Button Grid.Column="2"
+                           Variant="Filled" ColorMode="Default"
                            HorizontalAlignment="Stretch"
                            Padding="0,9"
-                           Click="SignInButton_Click">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <ui:SymbolIcon Symbol="PersonCircle24" FontSize="14" Margin="0,0,5,0"
-                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                        <TextBlock Text="Sign in" FontSize="12.5"/>
-                    </StackPanel>
-                </ui:Button>
+                           Click="SignInButton_Click"
+                           Icon="PersonCircle24"
+                           Content="Sign in" />
             </Grid>
 
             <!-- ====== Panel 1: Post-signup prompt ====== -->
             <StackPanel>
                 <TextBlock TextAlignment="Center" FontSize="13"
                            Margin="0,8,0,12" TextWrapping="Wrap">
-                    <Run Text="Go to "/>
-                    <Hyperlink Click="OpenSignUpPage_Click" Style="{StaticResource AccentHyperlink}">
-                        <Run x:Name="SignUpSiteNameRun" Text="MidiShow"/>
-                    </Hyperlink>
-                    <Run Text=" account creation page"/>
+                    <Run Text="Go to "/><InlineUIContainer BaselineAlignment="Center"><controls:Hyperlink PreviewToolTip="{Binding SignUpUrl, RelativeSource={RelativeSource AncestorType=controls:AccountPanel}}" Click="OpenSignUpPage_Click" Padding="0" Margin="0" BorderThickness="0" Background="Transparent" MinHeight="0"><TextBlock x:Name="SignUpSiteNameRun" Text="MidiShow" FontSize="13"/></controls:Hyperlink></InlineUIContainer><Run Text=" account creation page"/>
                 </TextBlock>
 
                 <TextBlock TextAlignment="Center" FontSize="13" Opacity="0.7"
                            Margin="0,0,0,10" TextWrapping="Wrap">
-                    <Run Text="Done creating? "/>
-                    <Hyperlink Click="SignInLink_Click" Style="{StaticResource AccentHyperlink}">
-                        <Run Text="Sign in"/>
-                    </Hyperlink>
-                    <Run Text=" to your account"/>
+                    <Run Text="Done creating? "/><InlineUIContainer BaselineAlignment="Center"><controls:Hyperlink Click="SignInLink_Click" IsPreviewToolTipEnabled="False" Padding="0" Margin="0" BorderThickness="0" Background="Transparent" MinHeight="0"><TextBlock Text="Sign in" FontSize="13"/></controls:Hyperlink></InlineUIContainer><Run Text=" to your account"/>
                 </TextBlock>
             </StackPanel>
 
@@ -182,6 +165,7 @@
                         <ui:PasswordBox x:Name="PasswordBox"
                                         Grid.Column="0"
                                         PlaceholderText="Password"
+                                        PasswordChar="•"
                                         ClearButtonEnabled="False"
                                         RevealButtonEnabled="False"
                                         Password="{Binding NewPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -194,39 +178,38 @@
                                     KeyDown="PasswordBox_KeyDown"
                                     Visibility="{Binding IsPasswordRevealed, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"/>
 
-                        <ui:Button Grid.Column="1"
-                                   Margin="6,0,0,0"
-                                   Padding="9,0"
-                                   VerticalAlignment="Stretch"
-                                   ToolTip="Show / hide password"
-                                   Command="{s:Action ToggleReveal}">
+                        <controls:Button Grid.Column="1"
+                                         Margin="6,0,0,0"
+                                         Padding="9,0"
+                                         VerticalAlignment="Stretch"
+                                         ToolTip="Show / hide password"
+                                         Variant="Ghost"
+                                         Command="{s:Action ToggleReveal}">
                             <Grid>
                                 <ui:SymbolIcon Symbol="Eye16" FontSize="16" Opacity="0.75"
-                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                Visibility="{Binding IsPasswordRevealed, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
                                 <ui:SymbolIcon Symbol="EyeOff16" FontSize="16" Opacity="0.75"
-                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                Visibility="{Binding IsPasswordRevealed, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"/>
                             </Grid>
-                        </ui:Button>
+                        </controls:Button>
                     </Grid>
-                    <ui:Button Appearance="Primary"
-                               HorizontalAlignment="Stretch"
-                               Padding="0,9"
-                               IsEnabled="{Binding IsNotAddingAccount}"
-                               Command="{s:Action AddPasswordAccount}">
-                        <Grid>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                                        Visibility="{Binding IsAddingAccount, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                <ui:SymbolIcon Symbol="PersonAdd24" FontSize="15" Margin="0,0,6,0"
-                                               Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                                <TextBlock Text="Add account"
-                                           Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                            </StackPanel>
-                            <ui:ProgressRing IsIndeterminate="True" Width="18" Height="18"
-                                             Visibility="{Binding IsAddingAccount, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"/>
-                        </Grid>
-                    </ui:Button>
+                    <Grid>
+                        <controls:Button Variant="Filled" ColorMode="Accent"
+                                         Icon="PersonAdd24"
+                                         Content="Add account"
+                                         HorizontalAlignment="Stretch"
+                                         Padding="0,9"
+                                         IsEnabled="{Binding IsNotAddingAccount}"
+                                         Command="{s:Action AddPasswordAccount}"
+                                         Visibility="{Binding IsAddingAccount, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                        <controls:Button Variant="Filled" ColorMode="Accent"
+                                         HorizontalAlignment="Stretch"
+                                         Padding="0,9"
+                                         IsEnabled="False"
+                                         Visibility="{Binding IsAddingAccount, Converter={x:Static s:BoolToVisibilityConverter.Instance}}">
+                            <ui:ProgressRing IsIndeterminate="True" Width="18" Height="18" Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+                        </controls:Button>
+                    </Grid>
                 </StackPanel>
 
                 <!-- Cookie mode -->
@@ -243,23 +226,23 @@
                                 PlaceholderText="Paste cookie header (_identity=...; _csrf=...; ...)"
                                 VerticalScrollBarVisibility="Auto"
                                 Text="{Binding NewCookies, UpdateSourceTrigger=PropertyChanged}"/>
-                    <ui:Button Appearance="Primary"
-                               HorizontalAlignment="Stretch"
-                               Padding="0,9"
-                               IsEnabled="{Binding IsNotAddingAccount}"
-                               Command="{s:Action AddCookieAccount}">
-                        <Grid>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                                        Visibility="{Binding IsAddingAccount, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                <ui:SymbolIcon Symbol="PersonAdd24" FontSize="15" Margin="0,0,6,0"
-                                               Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                                <TextBlock Text="Add account"
-                                           Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                            </StackPanel>
-                            <ui:ProgressRing IsIndeterminate="True" Width="18" Height="18"
-                                             Visibility="{Binding IsAddingAccount, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"/>
-                        </Grid>
-                    </ui:Button>
+                    <Grid>
+                        <controls:Button Variant="Filled" ColorMode="Accent"
+                                         Icon="PersonAdd24"
+                                         Content="Add account"
+                                         HorizontalAlignment="Stretch"
+                                         Padding="0,9"
+                                         IsEnabled="{Binding IsNotAddingAccount}"
+                                         Command="{s:Action AddCookieAccount}"
+                                         Visibility="{Binding IsAddingAccount, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                        <controls:Button Variant="Filled" ColorMode="Accent"
+                                         HorizontalAlignment="Stretch"
+                                         Padding="0,9"
+                                         IsEnabled="False"
+                                         Visibility="{Binding IsAddingAccount, Converter={x:Static s:BoolToVisibilityConverter.Instance}}">
+                            <ui:ProgressRing IsIndeterminate="True" Width="18" Height="18" Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+                        </controls:Button>
+                    </Grid>
 
                     <Expander Margin="0,12,0,0"
                               Header="How to copy your cookies">

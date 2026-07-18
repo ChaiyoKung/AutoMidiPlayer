@@ -33,7 +33,13 @@ public partial class AccountPanel : UserControl
     public static readonly DependencyProperty SignUpUrlProperty =
         DependencyProperty.Register(
             nameof(SignUpUrl), typeof(string), typeof(AccountPanel),
-            new PropertyMetadata("https://www.midishow.com/en/user/account/signup", (d, _) => (d as AccountPanel)?.UpdateSignUpVisibility()));
+            new PropertyMetadata("https://www.midishow.com/en/user/account/signup", (d, _) =>
+            {
+                if (d as AccountPanel is { } panel)
+                {
+                    panel.UpdateSignUpVisibility();
+                }
+            }));
 
     public string SignUpUrl
     {

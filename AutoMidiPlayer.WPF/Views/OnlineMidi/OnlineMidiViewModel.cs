@@ -276,6 +276,7 @@ public sealed class OnlineMidiViewModel : Screen
             Title = "Account Warning",
             Icon = Wpf.Ui.Controls.SymbolRegular.Warning24,
             Content = stackPanel,
+            TopRightButton = null,
             ConfirmButton = new AutoMidiPlayer.WPF.Helpers.DialogActionButton
             {
                 Text = "I Understand",

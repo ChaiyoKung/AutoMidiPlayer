@@ -337,6 +337,8 @@ public class SettingsPageViewModel : Screen
 
     public bool TelemetryOptIn { get; set; } = Settings.TelemetryOptIn;
 
+    public bool NotifyAccountRisk { get; set; } = Settings.NotifyAccountRisk;
+
     public bool PageCaching { get; set; } = Settings.PageCaching;
 
     public bool LogPlayedNotes { get; set; } = Settings.LogPlayedNotes;
@@ -1577,6 +1579,12 @@ public class SettingsPageViewModel : Screen
             NotifyOfPropertyChange(() => TelemetryOptIn);
             _isUpdatingTelemetry = false;
         }
+
+        if (NotifyAccountRisk != Settings.NotifyAccountRisk)
+        {
+            NotifyAccountRisk = Settings.NotifyAccountRisk;
+            NotifyOfPropertyChange(() => NotifyAccountRisk);
+        }
     }
 
     protected override void OnDeactivate()
@@ -1674,6 +1682,12 @@ public class SettingsPageViewModel : Screen
         {
             // IoC might not be fully built during early startup
         }
+    }
+
+    [UsedImplicitly]
+    private void OnNotifyAccountRiskChanged()
+    {
+        Settings.Modify(s => s.NotifyAccountRisk = NotifyAccountRisk);
     }
 
     [UsedImplicitly]

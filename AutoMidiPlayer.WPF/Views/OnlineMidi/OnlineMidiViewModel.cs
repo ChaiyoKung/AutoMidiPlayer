@@ -170,6 +170,7 @@ public sealed class OnlineMidiViewModel : Screen
         IsSignInExpanded = !IsSignInExpanded;
     }
 
+
     private bool _isAccountFlyoutOpen;
     private DateTime _lastFlyoutCloseTime = DateTime.MinValue;
 
@@ -230,6 +231,11 @@ public sealed class OnlineMidiViewModel : Screen
             MidiShowCache.EvictLru(settings.CacheMaxSizeMB);
         });
 
+        if (Data.Properties.Settings.Default.NotifyAccountRisk)
+        {
+            _ = ShowAccountWarningDialogAsync();
+        }
+
         // Show the (public) listing first so MIDIs appear after a single round-trip, then sign
         // the saved accounts in afterwards. Browsing/searching needs no auth — only
         // download/preview do — so there is no reason to make the user wait for login
@@ -237,6 +243,56 @@ public sealed class OnlineMidiViewModel : Screen
         await LoadAsync();
         RefreshAccounts();
         await _pool.RestoreAsync();
+    }
+
+    private async Task ShowAccountWarningDialogAsync()
+    {
+        var checkBox = new System.Windows.Controls.CheckBox
+        {
+            Content = "Don't show this again",
+            Margin = new System.Windows.Thickness(0, 8, 0, 0)
+        };
+
+        var stackPanel = new System.Windows.Controls.StackPanel();
+        stackPanel.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            TextWrapping = System.Windows.TextWrapping.Wrap,
+            Margin = new System.Windows.Thickness(0, 0, 0, 8),
+            Text = "It is preferred to use multiple dummy accounts to avoid being rate limited or shadow banned from MIDI downloading."
+        });
+
+        var warningText = new System.Windows.Controls.TextBlock
+        {
+            TextWrapping = System.Windows.TextWrapping.Wrap,
+            Margin = new System.Windows.Thickness(0, 0, 0, 16),
+            Text = "Do not use your personal account."
+        };
+        warningText.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "SystemFillColorCriticalBrush");
+        stackPanel.Children.Add(warningText);
+        stackPanel.Children.Add(checkBox);
+
+        var request = new AutoMidiPlayer.WPF.Helpers.DialogActionRequest
+        {
+            Title = "Account Warning",
+            Icon = Wpf.Ui.Controls.SymbolRegular.Warning24,
+            Content = stackPanel,
+            ConfirmButton = new AutoMidiPlayer.WPF.Helpers.DialogActionButton
+            {
+                Text = "I Understand",
+                Appearance = Wpf.Ui.Controls.ControlAppearance.Primary
+            },
+            CancelButton = null
+        };
+
+        var outcome = await AutoMidiPlayer.WPF.Helpers.DialogHelper.ShowActionDialogAsync(request);
+        if (outcome == AutoMidiPlayer.WPF.Helpers.DialogActionOutcome.Confirmed)
+        {
+            if (checkBox.IsChecked == true)
+            {
+                Data.Properties.Settings.Default.NotifyAccountRisk = false;
+                Data.Properties.Settings.Default.Save();
+            }
+        }
     }
 
     #region Accounts

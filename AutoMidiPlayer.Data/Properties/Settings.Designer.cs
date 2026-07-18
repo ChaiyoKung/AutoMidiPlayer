@@ -957,6 +957,18 @@ namespace AutoMidiPlayer.Data.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool NotifyAccountRisk {
+            get {
+                return ((bool)(this["NotifyAccountRisk"]));
+            }
+            set {
+                this["NotifyAccountRisk"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string SustainEnabledByGame {
             get {

@@ -850,12 +850,9 @@
 
                     <!-- Telemetry Section -->
                     <controls:Section Title="Crash Reporting &amp; Analytics"
+                                      Description="Automatically send machine information and logs when crashes occur. No personal data is collected."
                                       Margin="0,16,0,0">
                         <controls:SimpleStackPanel>
-                            <TextBlock Text="Automatically send machine information and logs when crashes occur. No personal data is collected."
-                                       TextWrapping="Wrap"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                       Margin="0,-6,0,12"/>
                             <ui:ToggleSwitch IsChecked="{Binding TelemetryOptIn}"
                                              Margin="0,0,0,8">
                             <ui:ToggleSwitch.Style>
@@ -873,6 +870,17 @@
                                 </Style>
                             </ui:ToggleSwitch.Style>
                         </ui:ToggleSwitch>
+                        </controls:SimpleStackPanel>
+                    </controls:Section>
+
+                    <!-- Notifications Section -->
+                    <controls:Section Title="Notifications"
+                                      Description="Manage what alerts and dialogs you want to see."
+                                      Margin="0,16,0,0">
+                        <controls:SimpleStackPanel>
+                            <ui:ToggleSwitch Content="MidiShow account warning"
+                                             IsChecked="{Binding NotifyAccountRisk}"
+                                             Margin="0,0,0,8"/>
                         </controls:SimpleStackPanel>
                     </controls:Section>
 

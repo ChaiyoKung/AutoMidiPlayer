@@ -71,6 +71,11 @@ public partial class OnlineMidiView : UserControl
     /// </summary>
     internal bool _keepOpenOnDeactivate;
 
+    private void AccountPanel_OpeningBrowser(object? sender, EventArgs e)
+    {
+        _keepOpenOnDeactivate = true;
+    }
+
     private void Window_Deactivated(object? sender, EventArgs e)
     {
         if (_keepOpenOnDeactivate)

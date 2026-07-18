@@ -97,20 +97,14 @@ public partial class AccountPanel : UserControl
     /// Opens the signup URL in the default browser while temporarily
     /// locking the parent popup so it doesn't close when focus is lost.
     /// </summary>
+    public event System.EventHandler? OpeningBrowser;
+
     private void OpenSignUpUrlSafely()
     {
         if (string.IsNullOrWhiteSpace(SignUpUrl)) return;
 
-        // Tell the parent view not to close the popup when the browser steals focus.
-        // The AccountPanel lives inside a Popup (separate HWND), so we reach the
-        // OnlineMidiView through the Popup's PlacementTarget which is in the main tree.
-        var popup = FindAncestor<Popup>(this);
-        if (popup?.PlacementTarget is not null)
-        {
-            var parentView = FindAncestor<Views.OnlineMidiView>(popup.PlacementTarget);
-            if (parentView is not null)
-                parentView._keepOpenOnDeactivate = true;
-        }
+        // Fire event so the parent window knows to ignore the upcoming Deactivated event
+        OpeningBrowser?.Invoke(this, System.EventArgs.Empty);
 
         OpenUrl(SignUpUrl);
     }

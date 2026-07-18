@@ -213,7 +213,8 @@
 
                         <ScrollViewer MaxHeight="540" VerticalScrollBarVisibility="Auto">
                             <controls:AccountPanel SiteName="MidiShow"
-                                                   SignUpUrl="https://www.midishow.com/en/user/account/signup"/>
+                                                   SignUpUrl="https://www.midishow.com/en/user/account/signup"
+                                                   OpeningBrowser="AccountPanel_OpeningBrowser"/>
                         </ScrollViewer>
                     </Border>
                 </Popup>

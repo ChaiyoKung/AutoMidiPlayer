@@ -201,9 +201,11 @@
                                    ToolTip="Show / hide password"
                                    Command="{s:Action ToggleReveal}">
                             <Grid>
-                                <ui:SymbolIcon Symbol="EyeLines24" FontSize="16" Opacity="0.75"
+                                <ui:SymbolIcon Symbol="Eye16" FontSize="16" Opacity="0.75"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                Visibility="{Binding IsPasswordRevealed, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                                <ui:SymbolIcon Symbol="EyeOff24" FontSize="16" Opacity="0.75"
+                                <ui:SymbolIcon Symbol="EyeOff16" FontSize="16" Opacity="0.75"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                Visibility="{Binding IsPasswordRevealed, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"/>
                             </Grid>
                         </ui:Button>
@@ -216,8 +218,10 @@
                         <Grid>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
                                         Visibility="{Binding IsAddingAccount, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                <ui:SymbolIcon Symbol="PersonAdd24" FontSize="15" Margin="0,0,6,0"/>
-                                <TextBlock Text="Add account"/>
+                                <ui:SymbolIcon Symbol="PersonAdd24" FontSize="15" Margin="0,0,6,0"
+                                               Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+                                <TextBlock Text="Add account"
+                                           Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                             </StackPanel>
                             <ui:ProgressRing IsIndeterminate="True" Width="18" Height="18"
                                              Visibility="{Binding IsAddingAccount, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"/>
@@ -247,8 +251,10 @@
                         <Grid>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
                                         Visibility="{Binding IsAddingAccount, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                <ui:SymbolIcon Symbol="PersonAdd24" FontSize="15" Margin="0,0,6,0"/>
-                                <TextBlock Text="Add account"/>
+                                <ui:SymbolIcon Symbol="PersonAdd24" FontSize="15" Margin="0,0,6,0"
+                                               Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+                                <TextBlock Text="Add account"
+                                           Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                             </StackPanel>
                             <ui:ProgressRing IsIndeterminate="True" Width="18" Height="18"
                                              Visibility="{Binding IsAddingAccount, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"/>

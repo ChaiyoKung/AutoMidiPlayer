@@ -157,6 +157,19 @@ public sealed class OnlineMidiViewModel : Screen
         NotifyOfPropertyChange(nameof(IsPasswordRevealed));
     }
 
+    /// <summary>When true the sign-in form is expanded (accordion open).</summary>
+    private bool _isSignInExpanded;
+    public bool IsSignInExpanded
+    {
+        get => _isSignInExpanded;
+        set => SetAndNotify(ref _isSignInExpanded, value);
+    }
+
+    public void ToggleSignIn()
+    {
+        IsSignInExpanded = !IsSignInExpanded;
+    }
+
     private bool _isAccountFlyoutOpen;
     private DateTime _lastFlyoutCloseTime = DateTime.MinValue;
 

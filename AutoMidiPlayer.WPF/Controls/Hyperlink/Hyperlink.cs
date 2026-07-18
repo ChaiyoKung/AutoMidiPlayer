@@ -204,13 +204,16 @@ public class Hyperlink : System.Windows.Controls.Button
         {
             Text = text,
             FontSize = TooltipFontSize,
+            FontFamily = SystemFonts.MessageFontFamily,
             TextWrapping = TextWrapping.NoWrap,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            MaxWidth = TooltipMaxWidth,
             VerticalAlignment = VerticalAlignment.Center
         });
 
-        return stackPanel;
+        return new ToolTip 
+        { 
+            Content = stackPanel,
+            MaxWidth = double.PositiveInfinity
+        };
     }
 
     private object? GetResolvedPreviewToolTip()

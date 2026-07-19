@@ -459,10 +459,16 @@
                         <controls:Button Variant="Ghost"
                                 Padding="10,8"
                                 Margin="0,0,6,0"
-                                         ToolTip="Preview — play without adding to Songs"
-                                         Click="Preview_Click"
-                                         Icon="PlayCircle24"
-                                IconFontSize="17"/>
+                                         ToolTip="Preview Song"
+                                         Click="Preview_Click">
+                            <Grid>
+                                <ui:SymbolIcon Symbol="PlayCircle24" FontSize="17"
+                                               Visibility="{Binding IsPreviewPlaying, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                <controls:EqualizerControl HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               IsPlaying="True"
+                                               Visibility="{Binding IsPreviewPlaying, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"/>
+                            </Grid>
+                        </controls:Button>
                         <controls:Button Variant="Ghost"
                                 ColorMode="Accent"
                                 Padding="11,8"

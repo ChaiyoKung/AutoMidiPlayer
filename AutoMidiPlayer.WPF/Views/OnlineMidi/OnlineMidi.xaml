@@ -11,6 +11,8 @@
     xmlns:midishow="clr-namespace:AutoMidiPlayer.WPF.Services.MidiShow"
     xmlns:converters="clr-namespace:AutoMidiPlayer.WPF.Converters"
     xmlns:controls="clr-namespace:AutoMidiPlayer.WPF.Controls"
+    xmlns:previewPlayer="clr-namespace:AutoMidiPlayer.WPF.Controls.MidiPreviewPlayer"
+    xmlns:seekbar="clr-namespace:AutoMidiPlayer.WPF.Controls.PlayerControlPanel"
     d:DataContext="{d:DesignInstance Type=viewModels:OnlineMidiViewModel}">
 
     <UserControl.Resources>
@@ -232,7 +234,7 @@
                 <Style TargetType="Border">
                     <Setter Property="Visibility" Value="Collapsed"/>
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsPreviewActive}" Value="True">
+                        <DataTrigger Binding="{Binding PreviewPlayer.IsPreviewActive}" Value="True">
                             <DataTrigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
@@ -283,68 +285,7 @@
                     </Style.Triggers>
                 </Style>
             </Border.Style>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Play / pause -->
-                <controls:Button Grid.Column="0"
-                           Variant="Filled" ColorMode="Default"
-                           Padding="8,6"
-                           VerticalAlignment="Center"
-                           ToolTip="Play / pause preview"
-                           Command="{s:Action PreviewPlayPause}">
-                    <Grid>
-                        <ui:SymbolIcon Symbol="PlayCircle24" FontSize="18"
-                                       Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                       Visibility="{Binding IsPreviewPlaying, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                        <ui:SymbolIcon Symbol="PauseCircle24" FontSize="18"
-                                       Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                       Visibility="{Binding IsPreviewPlaying, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"/>
-                    </Grid>
-                </controls:Button>
-
-                <!-- Stop -->
-                <controls:Button Grid.Column="1"
-                           Variant="Filled" ColorMode="Default"
-                           Padding="8,6"
-                           Margin="6,0,0,0"
-                           VerticalAlignment="Center"
-                           ToolTip="Stop preview"
-                           Command="{s:Action StopPreview}">
-                    <ui:SymbolIcon Symbol="Stop24" FontSize="18"
-                                   Foreground="#C42B1C"/>
-                </controls:Button>
-
-                <!-- Title + seekbar -->
-                <StackPanel Grid.Column="2" Margin="14,0,12,0" VerticalAlignment="Center">
-                    <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,0,1">
-                        <Run Text="Previewing" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                        <Run Text="{Binding PreviewTitle, Mode=OneWay}" FontWeight="SemiBold"/>
-                    </TextBlock>
-                    <Slider x:Name="PreviewSeek"
-                            Minimum="0"
-                            Maximum="{Binding PreviewDurationSeconds}"
-                            Value="{Binding PreviewPositionSeconds, Mode=TwoWay}"
-                            IsMoveToPointEnabled="True"
-                            VerticalAlignment="Center"
-                            Thumb.DragStarted="PreviewSeek_DragStarted"
-                            Thumb.DragCompleted="PreviewSeek_DragCompleted"
-                            PreviewMouseLeftButtonUp="PreviewSeek_MouseUp"/>
-                </StackPanel>
-
-                <!-- Time -->
-                <TextBlock Grid.Column="3" VerticalAlignment="Center"
-                           Opacity="0.7" FontSize="12" MinWidth="78" TextAlignment="Right">
-                    <Run Text="{Binding PreviewPositionText, Mode=OneWay}"/>
-                    <Run Text="/"/>
-                    <Run Text="{Binding PreviewDurationText, Mode=OneWay}"/>
-                </TextBlock>
-            </Grid>
+            <previewPlayer:MidiPreviewPlayer DataContext="{Binding PreviewPlayer}" />
         </Border>
 
         <!-- ============ Results ============ -->

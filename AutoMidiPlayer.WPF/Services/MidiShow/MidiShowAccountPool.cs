@@ -4,27 +4,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMidiPlayer.Data;
+using AutoMidiPlayer.WPF.Controls.Snackbar;
 
 namespace AutoMidiPlayer.WPF.Services.MidiShow;
 
-/// <summary>Lifecycle/health of one account in the pool, for display.</summary>
-public enum MidiShowAccountState
-{
-    /// <summary>Configured but not signed in yet.</summary>
-    Idle,
-    SigningIn,
-    /// <summary>Signed in and usable for downloads.</summary>
-    Active,
-    /// <summary>Hit a download quota / points / VIP wall — cooling down.</summary>
-    Limited,
-    /// <summary>Flagged by MidiShow risk control — cooling down.</summary>
-    RiskControlled,
-    /// <summary>Sign-in failed (bad password / expired cookies).</summary>
-    AuthFailed
-}
 
-/// <summary>A read-only snapshot of one account's identity and current health.</summary>
-public sealed record MidiShowAccountStatus(string Username, bool IsCookieBased, MidiShowAccountState State);
 
 /// <summary>
 /// Manages a pool of MidiShow accounts and spreads downloads across them. Browsing, searching
@@ -110,7 +94,12 @@ public sealed class MidiShowAccountPool : IDisposable
         {
             _entries.Clear();
             foreach (var account in accounts)
-                _entries.Add(new Entry { Account = account });
+                _entries.Add(new Entry 
+                { 
+                    Account = account, 
+                    State = account.State, 
+                    CooldownUntilUtc = account.CooldownUntilUtc ?? DateTime.MinValue 
+                });
         }
         RaiseChanged();
 
@@ -197,12 +186,33 @@ public sealed class MidiShowAccountPool : IDisposable
         lock (_lock)
         {
             var entry = _entries.FirstOrDefault(e => string.Equals(e.Account.Username, username, StringComparison.Ordinal));
-            if (entry is null)
-                return;
+            if (entry != null)
+            {
+                _entries.Remove(entry);
+                entry.Client?.Dispose();
+                Persist();
+            }
+        }
+        RaiseChanged();
+    }
 
-            entry.Client?.Dispose();
-            _entries.Remove(entry);
-            Persist();
+    /// <summary>
+    /// Forcibly clears any active cooldowns or error states for the specified account, resetting
+    /// it to Idle so it can be attempted again on the next download. Useful if the user has
+    /// fixed the account externally (e.g. verified email) and clicks a refresh button.
+    /// </summary>
+    public void ResetState(string username)
+    {
+        lock (_lock)
+        {
+            var entry = _entries.FirstOrDefault(e => string.Equals(e.Account.Username, username, StringComparison.Ordinal));
+            if (entry != null)
+            {
+                entry.State = MidiShowAccountState.Idle;
+                entry.CooldownUntilUtc = DateTime.MinValue;
+                entry.LoggedIn = false; // Force re-login just in case it was a cookie/auth fix
+                Persist();
+            }
         }
         RaiseChanged();
     }
@@ -303,7 +313,8 @@ public sealed class MidiShowAccountPool : IDisposable
             {
                 var cachedSummary = MidiShowCache.TryLoadSummary(cachedId);
                 var title = cachedSummary?.Title ?? $"MidiShow #{cachedId}";
-                Logger.LogStep("MIDISHOW_CACHE_HIT", $"id={cachedId} bytes={cachedData.Length}");
+                var path = MidiShowCache.GetMidiFilePath(cachedId);
+                Logger.LogStep("MIDISHOW_CACHE_HIT", $"id={cachedId} bytes={cachedData.Length} path={path}");
                 return new MidiShowDownloadResult(cachedData, title);
             }
         }
@@ -315,34 +326,49 @@ public sealed class MidiShowAccountPool : IDisposable
 
         MidiShowException? lastError = null;
 
-        foreach (var entry in candidates)
+        void ShowFailover(string primary, string account, bool hasNextAcc)
         {
+            if (hasNextAcc)
+                SnackbarService.Warning(primary, $"Account: {account} • Trying next...");
+        }
+
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            var entry = candidates[i];
+            bool hasNext = i < candidates.Count - 1;
             ct.ThrowIfCancellationRequested();
+            AdvanceRotation();
 
             if (!await EnsureLoggedInAsync(entry, ct))
             {
+                var suffix = hasNext ? "Trying next..." : "No more accounts to try.";
                 lastError = new MidiShowException(MidiShowDownloadError.NotAuthenticated,
-                    $"Could not sign in account \"{entry.Account.Username}\".");
+                    $"Could not sign in account \"{entry.Account.Username}\". {suffix}");
+                ShowFailover("Login Failed", entry.Account.Username, hasNext);
                 RaiseChanged();
                 continue;
             }
 
             try
             {
+                Logger.LogStep("MIDISHOW_DOWNLOAD_START", $"id={cachedId ?? "?"} account={entry.Account.Username}");
                 var result = await entry.Client!.DownloadAsync(pageUrl, ct);
+                Logger.LogStep("MIDISHOW_DOWNLOAD_SUCCESS", $"id={cachedId ?? "?"} account={entry.Account.Username}");
                 MarkActive(entry);
-                AdvanceRotation();
                 if (cachedId is not null)
                     _ = MidiShowCache.SaveMidiFileAsync(cachedId, result.Data);
                 return result;
             }
             catch (MidiShowException ex)
             {
+                Logger.LogStep("MIDISHOW_DOWNLOAD_ERROR", $"id={cachedId ?? "?"} account={entry.Account.Username} reason={ex.Reason}");
                 switch (ex.Reason)
                 {
-                    // Server-side outage: every account would hit it — don't burn through the pool.
-                    case MidiShowDownloadError.Unavailable:
-                        throw;
+                    case MidiShowDownloadError.NotActivated:
+                        MarkNotActivated(entry);
+                        lastError = new MidiShowException(ex.Reason, $"Account \"{entry.Account.Username}\": {ex.Message} {(hasNext ? "Trying next..." : "No more accounts to try.")}", ex);
+                        ShowFailover("Email not verified", entry.Account.Username, hasNext);
+                        break;
 
                     // Track-specific problems: rotating accounts won't change the outcome.
                     case MidiShowDownloadError.NotFound:
@@ -351,12 +377,14 @@ public sealed class MidiShowAccountPool : IDisposable
 
                     case MidiShowDownloadError.LimitReached:
                         CoolDown(entry, MidiShowAccountState.Limited, LimitCooldown);
-                        lastError = ex;
+                        lastError = new MidiShowException(ex.Reason, $"Account \"{entry.Account.Username}\": {ex.Message} {(hasNext ? "Trying next..." : "No more accounts to try.")}", ex);
+                        ShowFailover("Download limit reached", entry.Account.Username, hasNext);
                         break;
 
                     case MidiShowDownloadError.RiskControlled:
                         CoolDown(entry, MidiShowAccountState.RiskControlled, RiskCooldown);
-                        lastError = ex;
+                        lastError = new MidiShowException(ex.Reason, $"Account \"{entry.Account.Username}\": {ex.Message} {(hasNext ? "Trying next..." : "No more accounts to try.")}", ex);
+                        ShowFailover("Account risk control", entry.Account.Username, hasNext);
                         break;
 
                     case MidiShowDownloadError.NotAuthenticated:
@@ -366,9 +394,10 @@ public sealed class MidiShowAccountPool : IDisposable
                         {
                             try
                             {
+                                Logger.LogStep("MIDISHOW_DOWNLOAD_RETRY", $"id={cachedId ?? "?"} account={entry.Account.Username}");
                                 var retry = await entry.Client!.DownloadAsync(pageUrl, ct);
+                                Logger.LogStep("MIDISHOW_DOWNLOAD_SUCCESS", $"id={cachedId ?? "?"} account={entry.Account.Username}");
                                 MarkActive(entry);
-                                AdvanceRotation();
                                 if (cachedId is not null)
                                     _ = MidiShowCache.SaveMidiFileAsync(cachedId, retry.Data);
                                 return retry;
@@ -377,24 +406,33 @@ public sealed class MidiShowAccountPool : IDisposable
                             {
                                 // A global/track-specific failure on the retry is not this
                                 // account's fault — surface it instead of burning the pool.
-                                if (ex2.Reason is MidiShowDownloadError.Unavailable
-                                    or MidiShowDownloadError.NotFound
+                                if (ex2.Reason is MidiShowDownloadError.NotFound
                                     or MidiShowDownloadError.Decode)
                                     throw;
 
                                 if (ex2.Reason == MidiShowDownloadError.LimitReached)
+                                {
                                     CoolDown(entry, MidiShowAccountState.Limited, LimitCooldown);
+                                    ShowFailover("Download limit reached", entry.Account.Username, hasNext);
+                                }
                                 else if (ex2.Reason == MidiShowDownloadError.RiskControlled)
+                                {
                                     CoolDown(entry, MidiShowAccountState.RiskControlled, RiskCooldown);
+                                    ShowFailover("Account risk control", entry.Account.Username, hasNext);
+                                }
                                 else
+                                {
                                     MarkAuthFailed(entry);
-                                lastError = ex2;
+                                    ShowFailover("Authentication failed", entry.Account.Username, hasNext);
+                                }
+                                lastError = new MidiShowException(ex2.Reason, $"Account \"{entry.Account.Username}\": {ex2.Message} {(hasNext ? "Trying next..." : "No more accounts to try.")}", ex2);
                             }
                         }
                         else
                         {
                             MarkAuthFailed(entry);
-                            lastError = ex;
+                            lastError = new MidiShowException(ex.Reason, $"Account \"{entry.Account.Username}\": {ex.Message} {(hasNext ? "Trying next..." : "No more accounts to try.")}", ex);
+                            ShowFailover("Authentication failed", entry.Account.Username, hasNext);
                         }
                         break;
 
@@ -479,16 +517,38 @@ public sealed class MidiShowAccountPool : IDisposable
 
     private void MarkAuthFailed(Entry entry)
     {
-        entry.LoggedIn = false;
-        entry.State = MidiShowAccountState.AuthFailed;
+        lock (_lock)
+        {
+            entry.LoggedIn = false;
+            entry.State = MidiShowAccountState.AuthFailed;
+            entry.CooldownUntilUtc = DateTime.MinValue;
+            Persist();
+        }
+        RaiseChanged();
+    }
+
+    private void MarkNotActivated(Entry entry)
+    {
+        lock (_lock)
+        {
+            entry.LoggedIn = false;
+            entry.State = MidiShowAccountState.NotActivated;
+            entry.CooldownUntilUtc = DateTime.MinValue;
+            Persist();
+        }
         RaiseChanged();
     }
 
     private void CoolDown(Entry entry, MidiShowAccountState state, TimeSpan duration)
     {
-        entry.State = state;
-        entry.CooldownUntilUtc = DateTime.UtcNow + duration;
+        lock (_lock)
+        {
+            entry.State = state;
+            entry.CooldownUntilUtc = DateTime.UtcNow + duration;
+            Persist();
+        }
         Logger.LogStep("MIDISHOW_ACCOUNT_COOLDOWN", $"user={entry.Account.Username} state={state} untilUtc={entry.CooldownUntilUtc:o}");
+        RaiseChanged();
     }
 
     private bool ContainsAccount(string username)
@@ -514,7 +574,11 @@ public sealed class MidiShowAccountPool : IDisposable
     }
 
     // Caller must hold _lock.
-    private void Persist() => MidiShowAccountStore.Save(_entries.Select(e => e.Account));
+    private void Persist() => MidiShowAccountStore.Save(_entries.Select(e => e.Account with 
+    { 
+        State = e.State, 
+        CooldownUntilUtc = e.CooldownUntilUtc == DateTime.MinValue ? null : e.CooldownUntilUtc 
+    }));
 
     #endregion
 

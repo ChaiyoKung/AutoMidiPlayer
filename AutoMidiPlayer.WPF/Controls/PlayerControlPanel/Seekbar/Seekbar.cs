@@ -98,8 +98,8 @@ public partial class Seekbar : UserControl
         nameof(SelectionEnd), typeof(double), typeof(Seekbar), new PropertyMetadata(0d));
 
     public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
-        nameof(Value), typeof(int), typeof(Seekbar),
-        new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnValueChanged));
+        nameof(Value), typeof(double), typeof(Seekbar),
+        new FrameworkPropertyMetadata(0d, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnValueChanged));
 
     public static readonly DependencyProperty AnimatedValueProperty = DependencyProperty.Register(
         nameof(AnimatedValue), typeof(double), typeof(Seekbar),
@@ -186,9 +186,9 @@ public partial class Seekbar : UserControl
         set => SetValue(SelectionEndProperty, value);
     }
 
-    public int Value
+    public double Value
     {
-        get => (int)GetValue(ValueProperty);
+        get => (double)GetValue(ValueProperty);
         set => SetValue(ValueProperty, value);
     }
 
@@ -243,24 +243,29 @@ public partial class Seekbar : UserControl
 
     private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var control = (Seekbar)d;
+        if (d is not Seekbar control)
+            return;
 
-        // When value is programmatically changed (not during interactions), animate visual.
         if (control._suppressValuePropagation)
-        {
-            // noop: suppressed propagation path
-        }
+            return;
 
         control.UpdateThumbToolTip();
 
         if (control._interactionMode != SeekInteractionMode.None)
         {
-            // If interacting, don't start an animation to avoid fighting user input.
             return;
         }
 
-        var targetValue = (int)e.NewValue;
-        control.AnimateTo(targetValue);
+        var targetValue = (double)e.NewValue;
+
+        if (control.AnimateThumbTransitions)
+        {
+            control.AnimateTo(targetValue);
+        }
+        else
+        {
+            control.AnimatedValue = targetValue;
+        }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -305,9 +310,9 @@ public partial class Seekbar : UserControl
         control.UpdateThumbToolTip();
     }
 
-    private void AnimateTo(int targetValue)
+    private void AnimateTo(double targetValue)
     {
-        var clamped = Math.Clamp(targetValue, (int)Math.Round(Minimum), (int)Math.Round(Maximum));
+        var clamped = Math.Clamp(targetValue, Minimum, Maximum);
 
         if (!AnimateThumbTransitions || _suppressAnimation || !IsLoaded)
         {
@@ -395,7 +400,7 @@ public partial class Seekbar : UserControl
         if (_interactionMode == SeekInteractionMode.None)
             return;
 
-        int? releaseTarget = null;
+        double? releaseTarget = null;
         if (_interactionMode == SeekInteractionMode.Track && _track is not null)
             releaseTarget = ResolveTargetValueFromMousePosition(e.GetPosition(_track));
 
@@ -412,17 +417,17 @@ public partial class Seekbar : UserControl
         ResetTrackInteraction();
     }
 
-    private int Snap(double raw)
+    private double Snap(double raw)
     {
         var min = Minimum;
         var max = Maximum;
 
         if (!IsSnapToTickEnabled || TickFrequency <= 0)
-            return (int)Math.Round(Math.Clamp(raw, min, max));
+            return Math.Clamp(raw, min, max);
 
         var steps = Math.Round((raw - min) / TickFrequency);
         var snapped = min + (steps * TickFrequency);
-        return (int)Math.Round(Math.Clamp(snapped, min, max));
+        return Math.Clamp(snapped, min, max);
     }
 
     private void ResolveThumb()
@@ -883,9 +888,10 @@ public partial class Seekbar : UserControl
         ShowHoverFillAt(position.X);
     }
 
-    private void CommitPreviewToValue(int? explicitTarget = null)
+    private void CommitPreviewToValue(double? explicitTarget = null)
     {
-        var target = explicitTarget ?? (int)Math.Round(AnimatedValue);
+        var target = explicitTarget ?? AnimatedValue;
+        var newText = FormatPreviewText(target);
 
         // Stop any in-flight easing before committing to avoid latching an intermediate animated value.
         BeginAnimation(AnimatedValueProperty, null);
@@ -902,11 +908,11 @@ public partial class Seekbar : UserControl
         IsPreviewActive = false;
     }
 
-    private int ResolveTargetValueFromMousePosition(Point position)
+    private double ResolveTargetValueFromMousePosition(Point position)
     {
         ResolveTrack();
-        if (_track is null)
-            return (int)Math.Round(AnimatedValue);
+        if (_track is null || Maximum <= Minimum)
+            return AnimatedValue;
 
         var isVertical = SliderHost.Orientation == Orientation.Vertical;
 
@@ -1093,7 +1099,7 @@ public partial class Seekbar : UserControl
 
     private void Thumb_DragCompleted(object? sender, DragCompletedEventArgs e)
     {
-        int? releaseTarget = null;
+        double? releaseTarget = null;
         if (_track is not null && _thumb is not null)
         {
             var thumbCenter = _thumb.TranslatePoint(new Point(_thumb.ActualWidth / 2.0, _thumb.ActualHeight / 2.0), _track);

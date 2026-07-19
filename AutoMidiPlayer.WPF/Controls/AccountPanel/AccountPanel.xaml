@@ -63,11 +63,18 @@
                                     <Run Text="{Binding StatusText, Mode=OneWay}"/>
                                 </TextBlock>
                             </StackPanel>
-                            <controls:Button Grid.Column="2" Variant="Filled" ColorMode="Default" Padding="7,5" Margin="0,0,6,0"
-                                       ToolTip="Copy this account's session cookies"
-                                       Visibility="{Binding CanCopyCookies, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"
-                                       Click="CopyCookies_Click"
-                                       Icon="Copy24" />
+                            <Grid Grid.Column="2">
+                                <controls:Button Variant="Filled" ColorMode="Default" Padding="7,5" Margin="0,0,6,0"
+                                           ToolTip="Copy this account's session cookies"
+                                           Visibility="{Binding CanCopyCookies, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"
+                                           Click="CopyCookies_Click"
+                                           Icon="Copy24" />
+                                <controls:Button Variant="Filled" ColorMode="Default" Padding="7,5" Margin="0,0,6,0"
+                                           ToolTip="Reset account state (e.g. if you verified email or waited out a limit)"
+                                           Visibility="{Binding IsErrorState, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"
+                                           Click="RefreshAccount_Click"
+                                           Icon="ArrowClockwise24" />
+                            </Grid>
                             <controls:Button Grid.Column="3" Variant="Filled" ColorMode="Default" Padding="7,5"
                                        ToolTip="Remove this account"
                                        Click="RemoveAccount_Click">

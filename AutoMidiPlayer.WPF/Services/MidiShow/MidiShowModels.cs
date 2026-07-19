@@ -111,6 +111,13 @@ public sealed class MidiShowItem : PropertyChangedBase
     /// <summary>Rating shown as "5.0 (8)".</summary>
     public string RatingDisplay => $"{Rating} ({RatingCount})";
 
+    private bool _isPreviewPlaying;
+    public bool IsPreviewPlaying
+    {
+        get => _isPreviewPlaying;
+        set => SetAndNotify(ref _isPreviewPlaying, value);
+    }
+
     private bool _isExpanded;
     public bool IsExpanded
     {
@@ -211,12 +218,7 @@ public enum MidiShowDownloadError
     Network,
     Decode,
 
-    /// <summary>
-    /// MidiShow has temporarily disabled MIDI downloads/previews server-side (e.g. an
-    /// anti-scraping measure). Affects everyone — the session is still valid and signing
-    /// in again does not help.
-    /// </summary>
-    Unavailable,
+    NotActivated,
 
     /// <summary>
     /// The account's per-day download quota / points balance / VIP requirement blocked the
@@ -246,3 +248,24 @@ public sealed class MidiShowException : System.Exception
         Reason = reason;
     }
 }
+
+/// <summary>Lifecycle/health of one account in the pool, for display.</summary>
+public enum MidiShowAccountState
+{
+    /// <summary>Configured but not signed in yet.</summary>
+    Idle,
+    SigningIn,
+    /// <summary>Signed in and usable for downloads.</summary>
+    Active,
+    /// <summary>Hit a download quota / points / VIP wall — cooling down.</summary>
+    Limited,
+    /// <summary>Flagged by MidiShow risk control — cooling down.</summary>
+    RiskControlled,
+    /// <summary>Sign-in failed (bad password / expired cookies).</summary>
+    AuthFailed,
+    /// <summary>Email needs verification.</summary>
+    NotActivated
+}
+
+/// <summary>A read-only snapshot of one account's identity and current health.</summary>
+public sealed record MidiShowAccountStatus(string Username, bool IsCookieBased, MidiShowAccountState State);

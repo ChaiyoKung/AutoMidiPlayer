@@ -209,15 +209,6 @@ public partial class OnlineMidiView : UserControl
             _ = vm.PreviewAsync(item);
     }
 
-    private void PreviewSeek_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)
-        => ViewModel?.BeginPreviewScrub();
-
-    private void PreviewSeek_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
-        => ViewModel?.EndPreviewScrub();
-
-    private void PreviewSeek_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        => ViewModel?.EndPreviewScrub();
-
     private void Sort_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel is { } vm && sender is MenuItem { Tag: string key })

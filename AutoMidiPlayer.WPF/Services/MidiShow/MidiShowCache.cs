@@ -265,6 +265,9 @@ public static class MidiShowCache
         }
     }
 
+    /// <summary>Returns the absolute file path for a cached MIDI file by its ID.</summary>
+    public static string GetMidiFilePath(string id) => Path.Combine(AppPaths.DiscoverMidiCacheDirectory, id, MidiFileName);
+
     #endregion
 
     #region Avatar

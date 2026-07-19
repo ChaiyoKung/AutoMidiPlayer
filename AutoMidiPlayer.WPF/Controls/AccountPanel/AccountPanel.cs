@@ -129,6 +129,12 @@ public partial class AccountPanel : UserControl
         RaiseEvent(new RoutedEventArgs(RemoveAccountClickedEvent, sender));
     }
 
+    private void RefreshAccount_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: MidiShowAccountRow row })
+            (DataContext as OnlineMidiViewModel)?.ResetAccountState(row);
+    }
+
     private void CopyCookies_Click(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { DataContext: MidiShowAccountRow row })

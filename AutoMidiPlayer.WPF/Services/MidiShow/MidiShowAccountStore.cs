@@ -15,7 +15,12 @@ namespace AutoMidiPlayer.WPF.Services.MidiShow;
 /// a raw "name=value; ..." header copied from a signed-in browser, used when a password
 /// login is blocked by a captcha / risk control).
 /// </summary>
-public sealed record MidiShowAccount(string Username, string? Password, string? Cookies)
+public sealed record MidiShowAccount(
+    string Username,
+    string? Password,
+    string? Cookies,
+    MidiShowAccountState State = MidiShowAccountState.Idle,
+    DateTime? CooldownUntilUtc = null)
 {
     /// <summary>True when this account signs in with an imported cookie header, not a password.</summary>
     public bool IsCookieBased => string.IsNullOrEmpty(Password) && !string.IsNullOrEmpty(Cookies);

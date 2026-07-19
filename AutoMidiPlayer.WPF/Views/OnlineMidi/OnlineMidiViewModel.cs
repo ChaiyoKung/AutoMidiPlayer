@@ -5,10 +5,12 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.ComponentModel;
 using AutoMidiPlayer.Data;
 using AutoMidiPlayer.Data.Midi.Extensions;
 using AutoMidiPlayer.WPF.Controls.Snackbar;
 using AutoMidiPlayer.WPF.Services.MidiShow;
+using AutoMidiPlayer.WPF.Controls.MidiPreviewPlayer;
 using JetBrains.Annotations;
 using Melanchall.DryWetMidi.Core;
 using Stylet;
@@ -26,7 +28,7 @@ namespace AutoMidiPlayer.WPF.ViewModels;
 [UsedImplicitly]
 public sealed class OnlineMidiViewModel : Screen
 {
-    private readonly IContainer _ioc;
+    private readonly StyletIoC.IContainer _ioc;
     private readonly MainWindowViewModel _main;
     private readonly MidiShowAccountPool _pool = new();
 
@@ -36,11 +38,12 @@ public sealed class OnlineMidiViewModel : Screen
     /// <summary>True once a page load comes back empty (we've paged past the last page).</summary>
     private bool _reachedEnd;
 
-    public OnlineMidiViewModel(IContainer ioc, MainWindowViewModel main)
+    public MidiPreviewPlayerViewModel PreviewPlayer { get; } = new();
+
+    public OnlineMidiViewModel(StyletIoC.IContainer ioc, MainWindowViewModel main)
     {
         _ioc = ioc;
         _main = main;
-        _preview.Finished += OnPreviewFinished;
         _pool.Changed += OnPoolChanged;
 
         // Preview and the main player both render through the same Windows synth, so they
@@ -48,11 +51,31 @@ public sealed class OnlineMidiViewModel : Screen
         // (releasing its synth device) — otherwise the preview dies mid-play and its device
         // is left in a bad state, breaking the next preview.
         _main.PlaybackControls.PlaybackStateChanged += OnMainPlaybackStateChanged;
+        PreviewPlayer.PropertyChanged += OnPreviewPlayerPropertyChanged;
+    }
+
+    private void OnPreviewPlayerPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(PreviewPlayer.IsPreviewPlaying))
+        {
+            if (_currentPreviewItem is not null)
+            {
+                _currentPreviewItem.IsPreviewPlaying = PreviewPlayer.IsPreviewPlaying;
+            }
+        }
+        else if (e.PropertyName == nameof(PreviewPlayer.IsPreviewActive))
+        {
+            if (!PreviewPlayer.IsPreviewActive && _currentPreviewItem is not null)
+            {
+                _currentPreviewItem.IsPreviewPlaying = false;
+                _currentPreviewItem = null;
+            }
+        }
     }
 
     private void OnMainPlaybackStateChanged(object? sender, EventArgs e)
     {
-        if (!IsPreviewActive || !_main.PlaybackControls.IsPlaying)
+        if (!PreviewPlayer.IsPreviewActive || !_main.PlaybackControls.IsPlaying)
             return;
 
         var dispatcher = System.Windows.Application.Current?.Dispatcher;
@@ -397,11 +420,17 @@ public sealed class OnlineMidiViewModel : Screen
     /// <summary>Removes an account from the pool (and from disk).</summary>
     public void RemoveAccount(MidiShowAccountRow row)
     {
-        if (row is null)
-            return;
-
+        if (row is null) return;
         _pool.Remove(row.Username);
         SnackbarService.Info("Account removed", $"\"{row.Username}\" was removed from this device.");
+    }
+
+    /// <summary>Resets the account's state to Idle, clearing any cooldowns.</summary>
+    public void ResetAccountState(MidiShowAccountRow row)
+    {
+        if (row is null) return;
+        _pool.ResetState(row.Username);
+        SnackbarService.Success("Account state reset", $"\"{row.Username}\" will be tried again for the next download.");
     }
 
     /// <summary>Copies an account's live session cookies to the clipboard.</summary>
@@ -623,6 +652,19 @@ public sealed class OnlineMidiViewModel : Screen
 
     private void UpdateResultsCollection(IReadOnlyList<MidiShowItem> items, bool isSearch, string statusText = "")
     {
+        if (PreviewPlayer.IsPreviewActive && _currentPreviewItem != null)
+        {
+            foreach (var item in items)
+            {
+                if (item.Id == _currentPreviewItem.Id)
+                {
+                    item.IsPreviewPlaying = PreviewPlayer.IsPreviewPlaying;
+                    _currentPreviewItem = item;
+                    break;
+                }
+            }
+        }
+
         for (int i = 0; i < items.Count; i++)
         {
             if (i < Results.Count)
@@ -759,14 +801,11 @@ public sealed class OnlineMidiViewModel : Screen
         {
             switch (ex.Reason)
             {
-                case MidiShowDownloadError.Unavailable:
-                    SnackbarService.Warning("MidiShow downloads paused", ex.Message);
-                    break;
                 case MidiShowDownloadError.LimitReached:
-                    SnackbarService.Warning("Download limit reached", ex.Message);
+                    SnackbarService.Danger("Download limit reached", ex.Message);
                     break;
                 case MidiShowDownloadError.RiskControlled:
-                    SnackbarService.Warning("Account risk control", ex.Message);
+                    SnackbarService.Danger("Account risk control", ex.Message);
                     break;
                 default:
                     SnackbarService.Danger("Couldn't add to Songs", ex.Reason switch
@@ -792,23 +831,7 @@ public sealed class OnlineMidiViewModel : Screen
         }
     }
 
-    private readonly MidiShowPreviewPlayer _preview = new();
-    private System.Windows.Threading.DispatcherTimer? _previewTimer;
-    private bool _previewScrubbing;
-
-    /// <summary>True while the preview mini-player popup is open.</summary>
-    public bool IsPreviewActive { get; private set; }
-
-    /// <summary>True when the preview is playing (vs paused) — drives the play/pause icon.</summary>
-    public bool IsPreviewPlaying { get; private set; }
-    public string PreviewPlayPauseIcon => IsPreviewPlaying ? "PauseCircle24" : "PlayCircle24";
-
-    public string PreviewTitle { get; private set; } = string.Empty;
-
-    public double PreviewDurationSeconds { get; private set; }
-    public double PreviewPositionSeconds { get; set; }
-    public string PreviewPositionText { get; private set; } = "0:00";
-    public string PreviewDurationText { get; private set; } = "0:00";
+    private MidiShowItem? _currentPreviewItem;
 
     /// <summary>
     /// Downloads (only when clicked) and plays the MIDI on a SEPARATE preview player —
@@ -819,6 +842,13 @@ public sealed class OnlineMidiViewModel : Screen
     {
         if (item is null)
             return;
+
+        if (_currentPreviewItem == item && PreviewPlayer.IsPreviewActive)
+        {
+            PreviewPlayer.TogglePlayPause();
+            item.IsPreviewPlaying = PreviewPlayer.IsPreviewPlaying;
+            return;
+        }
 
         if (!_pool.HasAccounts)
         {
@@ -861,28 +891,12 @@ public sealed class OnlineMidiViewModel : Screen
                 pausedMain = true;
             }
 
-            // Play on the shared synth (off the UI thread; reading the MIDI).
-            await Task.Run(() => _preview.Play(result.Data, synth));
+            await Task.Run(() => PreviewPlayer.Play(result.Data, result.Title, item.Uploader, item.ThumbnailUrl, synth));
 
-            PreviewTitle = result.Title;
-            IsPreviewActive = true;
-            IsPreviewPlaying = true;
-            _previewScrubbing = false;
-            PreviewDurationSeconds = Math.Max(0.1, _preview.Duration.TotalSeconds);
-            PreviewPositionSeconds = 0;
-            PreviewDurationText = FormatTime(_preview.Duration);
-            PreviewPositionText = "0:00";
-
-            NotifyOfPropertyChange(nameof(PreviewTitle));
-            NotifyOfPropertyChange(nameof(IsPreviewActive));
-            NotifyOfPropertyChange(nameof(IsPreviewPlaying));
-            NotifyOfPropertyChange(nameof(PreviewPlayPauseIcon));
-            NotifyOfPropertyChange(nameof(PreviewDurationSeconds));
-            NotifyOfPropertyChange(nameof(PreviewPositionSeconds));
-            NotifyOfPropertyChange(nameof(PreviewDurationText));
-            NotifyOfPropertyChange(nameof(PreviewPositionText));
-
-            StartPreviewTimer();
+            if (_currentPreviewItem is not null && _currentPreviewItem != item)
+                _currentPreviewItem.IsPreviewPlaying = false;
+            _currentPreviewItem = item;
+            _currentPreviewItem.IsPreviewPlaying = true;
         }
         catch (MidiShowException ex)
         {
@@ -890,14 +904,11 @@ public sealed class OnlineMidiViewModel : Screen
 
             switch (ex.Reason)
             {
-                case MidiShowDownloadError.Unavailable:
-                    SnackbarService.Warning("MidiShow previews paused", ex.Message);
-                    break;
                 case MidiShowDownloadError.LimitReached:
-                    SnackbarService.Warning("Download limit reached", ex.Message);
+                    SnackbarService.Danger("Download limit reached", ex.Message);
                     break;
                 case MidiShowDownloadError.RiskControlled:
-                    SnackbarService.Warning("Account risk control", ex.Message);
+                    SnackbarService.Danger("Account risk control", ex.Message);
                     break;
                 default:
                     SnackbarService.Danger("Preview failed", ex.Reason == MidiShowDownloadError.NotAuthenticated
@@ -922,100 +933,19 @@ public sealed class OnlineMidiViewModel : Screen
         }
     }
 
-    /// <summary>
-    /// If we paused the main player to make room for a preview that never actually started,
-    /// resume it — otherwise a failed preview would leave the user's music silently paused.
-    /// </summary>
     private async Task ResumeMainIfPreviewFailed(bool pausedMain)
     {
-        if (pausedMain && !IsPreviewActive && !_main.PlaybackControls.IsPlaying)
+        if (pausedMain && !PreviewPlayer.IsPreviewActive && !_main.PlaybackControls.IsPlaying)
             await _main.PlaybackControls.PlayPause();
-    }
-
-
-    /// <summary>Toggle play/pause on the preview.</summary>
-    public void PreviewPlayPause()
-    {
-        if (!IsPreviewActive)
-            return;
-
-        _preview.TogglePlayPause();
-        IsPreviewPlaying = _preview.IsPlaying;
-        NotifyOfPropertyChange(nameof(IsPreviewPlaying));
-        NotifyOfPropertyChange(nameof(PreviewPlayPauseIcon));
     }
 
     public void StopPreview()
     {
-        StopPreviewTimer();
-        _preview.Stop();
-        IsPreviewActive = false;
-        IsPreviewPlaying = false;
-        PreviewPositionSeconds = 0;
-        NotifyOfPropertyChange(nameof(IsPreviewActive));
-        NotifyOfPropertyChange(nameof(IsPreviewPlaying));
-        NotifyOfPropertyChange(nameof(PreviewPlayPauseIcon));
-        NotifyOfPropertyChange(nameof(PreviewPositionSeconds));
-    }
-
-    // Called from the view while the user drags the seek slider.
-    public void BeginPreviewScrub() => _previewScrubbing = true;
-
-    public void EndPreviewScrub()
-    {
-        _preview.Seek(TimeSpan.FromSeconds(PreviewPositionSeconds));
-        _previewScrubbing = false;
-        PreviewPositionText = FormatTime(TimeSpan.FromSeconds(PreviewPositionSeconds));
-        NotifyOfPropertyChange(nameof(PreviewPositionText));
-    }
-
-    private void StartPreviewTimer()
-    {
-        if (_previewTimer is null)
-        {
-            _previewTimer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(250)
-            };
-            _previewTimer.Tick += (_, _) => OnPreviewTick();
-        }
-        _previewTimer.Start();
-    }
-
-    private void StopPreviewTimer() => _previewTimer?.Stop();
-
-    private void OnPreviewTick()
-    {
-        if (!IsPreviewActive)
-            return;
-
-        var playing = _preview.IsPlaying;
-        if (playing != IsPreviewPlaying)
-        {
-            IsPreviewPlaying = playing;
-            NotifyOfPropertyChange(nameof(IsPreviewPlaying));
-            NotifyOfPropertyChange(nameof(PreviewPlayPauseIcon));
-        }
-
-        if (_previewScrubbing)
-            return;
-
-        var pos = _preview.CurrentTime;
-        PreviewPositionSeconds = pos.TotalSeconds;
-        PreviewPositionText = FormatTime(pos);
-        NotifyOfPropertyChange(nameof(PreviewPositionSeconds));
-        NotifyOfPropertyChange(nameof(PreviewPositionText));
-    }
-
-    private void OnPreviewFinished()
-    {
-        void Apply() => StopPreview();
-
-        var dispatcher = System.Windows.Application.Current?.Dispatcher;
-        if (dispatcher is null || dispatcher.CheckAccess())
-            Apply();
-        else
-            dispatcher.Invoke(Apply);
+        PreviewPlayer.Stop();
+        // Since we are tracking _currentPreviewItem manually here for the download case,
+        // although we also have OnPreviewPlayerPropertyChanged handling the active state,
+        // let's rely on OnPreviewPlayerPropertyChanged to set _currentPreviewItem = null 
+        // when IsPreviewActive becomes false. So we can just leave it to PreviewPlayer.Stop().
     }
 
     private static string FormatTime(TimeSpan t)
@@ -1148,6 +1078,7 @@ public sealed class MidiShowAccountRow
         MidiShowAccountState.Limited => "Limit reached",
         MidiShowAccountState.RiskControlled => "Risk control",
         MidiShowAccountState.AuthFailed => "Sign-in failed",
+        MidiShowAccountState.NotActivated => "Email not verified",
         _ => "Idle"
     };
 
@@ -1159,10 +1090,16 @@ public sealed class MidiShowAccountRow
         MidiShowAccountState.Limited => Frozen(0xE5, 0xA8, 0x00),        // amber
         MidiShowAccountState.RiskControlled => Frozen(0xE5, 0xA8, 0x00), // amber
         MidiShowAccountState.AuthFailed => Frozen(0xE0, 0x4F, 0x4F),     // red
+        MidiShowAccountState.NotActivated => Frozen(0xE0, 0x4F, 0x4F),   // red
         _ => Frozen(0x9A, 0x9A, 0x9A)                                    // grey
     };
 
     public bool CanCopyCookies => State == MidiShowAccountState.Active;
+    
+    public bool IsErrorState => State is MidiShowAccountState.AuthFailed 
+                                      or MidiShowAccountState.NotActivated 
+                                      or MidiShowAccountState.Limited 
+                                      or MidiShowAccountState.RiskControlled;
 
     private static System.Windows.Media.Brush Frozen(byte r, byte g, byte b)
     {

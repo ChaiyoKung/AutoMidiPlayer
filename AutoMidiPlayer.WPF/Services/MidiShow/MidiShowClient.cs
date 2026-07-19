@@ -467,27 +467,28 @@ public sealed class MidiShowClient : IDisposable
         bool Has(params string[] needles) =>
             needles.Any(n => body.Contains(n, StringComparison.OrdinalIgnoreCase));
 
-        // Feature temporarily disabled server-side (anti-scraping). Match the distinctive bits of
-        // the Chinese notice, plus English fallbacks in case the locale/wording changes.
+        // Account not activated.
+        if (Has("尚未激活", "验证邮箱", "verify", "not activated"))
+            return new MidiShowException(MidiShowDownloadError.NotActivated,
+                "MidiShow requires this account to verify its email address.");
+
+        // Feature temporarily disabled server-side (anti-scraping) - treat as risk control to failover.
         if (Has("恶意抓取", "暂时关闭", "试听", "OGG", "scraping", "temporarily disabled"))
-            return new MidiShowException(MidiShowDownloadError.Unavailable,
-                "MidiShow has temporarily disabled MIDI downloads on their side (an anti-scraping " +
-                "measure). Please try again later. Browsing and search still work.");
+            return new MidiShowException(MidiShowDownloadError.RiskControlled,
+                "MidiShow temporarily disabled downloads (anti-scraping measure).");
 
         // Risk control / abnormal-activity flag on the account. 风控 = risk control,
         // 异常 = abnormal, 频繁 = frequent, 验证 = (extra) verification. The account is valid but
         // temporarily blocked — surfaced separately so the pool can rotate to another account.
         if (Has("风控", "异常", "频繁", "risk control", "abnormal", "too frequent", "unusual activity"))
             return new MidiShowException(MidiShowDownloadError.RiskControlled,
-                "MidiShow flagged this account's activity as abnormal (risk control). Try a " +
-                "different account, or wait a while before downloading again.");
+                "MidiShow flagged this account's activity as abnormal (risk control).");
 
         // Per-account quota / points / VIP. English keywords plus common Chinese equivalents:
         // 积分 = points, 次数 = (download) count, 限制 = limit, 会员/VIP = membership, 余额 = balance.
         if (Has("limit", "points", "insufficient", "vip", "积分", "次数", "限制", "会员", "余额"))
             return new MidiShowException(MidiShowDownloadError.LimitReached,
-                "Your MidiShow download limit was reached, or this track needs more points / VIP on " +
-                "your account. Your sign-in is still valid.");
+                "Your MidiShow download limit was reached, or this track needs more points / VIP.");
 
         // Anything else: treat as a real authentication problem (re-login is the right fix).
         return new MidiShowException(MidiShowDownloadError.NotAuthenticated,

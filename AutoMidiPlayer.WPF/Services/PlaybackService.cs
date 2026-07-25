@@ -334,6 +334,7 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
                     _pedalStateNeedsResync = true;
 
                     ReconcilePedalStates();
+                    SyncPedalStatesToUI();
                 }
                 catch (Exception ex)
                 {
@@ -416,6 +417,7 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
         _scheduledEventTicks += (long)e.Event.DeltaTime;
 
         ReconcilePedalStates();
+        SyncPedalStatesToUI();
 
         if (e.Event is ControlChangeEvent ccEvent && (ccEvent.ControlNumber == 64 || ccEvent.ControlNumber == 66 || ccEvent.ControlNumber == 67))
         {
@@ -441,17 +443,6 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
         var layoutConfig = Keyboard.GetLayoutConfig(layout, instrument);
         if (layoutConfig == null) return;
 
-        VirtualKeyCode? pedalKey = pedal.CcNumber switch
-        {
-            64 => layoutConfig.SustainKey,
-            66 => layoutConfig.SostenutoKey,
-            67 => layoutConfig.UnaCordaKey,
-            _ => null
-        };
-
-        if (pedalKey is null)
-            return;
-
         var isPedalDown = ccEvent.ControlValue >= 64;
 
         // Track CC state unconditionally so UI pedal indicators always work
@@ -460,13 +451,14 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
         else
             pedal.ChannelsDown.Remove(ccEvent.Channel);
 
-        // Forward CC to speakers when layout supports the pedal
+        // Forward CC to speakers when in listen mode or fallback
         if (Settings.UseSpeakers)
         {
             _speakers?.SendEvent(ccEvent);
 
             if (ShouldLogPlayedNotes)
                 Logger.LogInputOutput($"{(isPedalDown ? $"{pedal.Name.ToUpper()}_DOWN" : $"{pedal.Name.ToUpper()}_UP")} mode=speakers");
+            
             SyncPedalStatesToUI();
             return;
         }
@@ -477,13 +469,29 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
         if (!isGameRunning)
         {
             // Auto-listen fallback: forward to speakers if available
-            if (Settings.AutoEnableListenMode || Settings.UseSpeakers)
+            if (Settings.AutoEnableListenMode)
                 _speakers?.SendEvent(ccEvent);
+            
+            SyncPedalStatesToUI();
+            return;
+        }
+
+        VirtualKeyCode? pedalKey = pedal.CcNumber switch
+        {
+            64 => layoutConfig.SustainKey,
+            66 => layoutConfig.SostenutoKey,
+            67 => layoutConfig.UnaCordaKey,
+            _ => null
+        };
+
+        if (pedalKey is null)
+        {
             SyncPedalStatesToUI();
             return;
         }
 
         ReconcilePedalStates();
+        SyncPedalStatesToUI();
     }
 
     private void ReconcilePedalStates()
@@ -502,8 +510,18 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
         {
             foreach (var pedal in AllPedals)
             {
-                var shouldBeDown = pedal.ChannelsDown.Count > 0;
-                pedal.IsCurrentlyHeldInGame = !shouldBeDown;
+                VirtualKeyCode? pKey = pedal.CcNumber switch
+                {
+                    64 => layoutConfig.SustainKey,
+                    66 => layoutConfig.SostenutoKey,
+                    67 => layoutConfig.UnaCordaKey,
+                    _ => null
+                };
+                if (pKey != null)
+                {
+                    var shouldBeDown = pedal.ChannelsDown.Count > 0;
+                    pedal.IsCurrentlyHeldInGame = !shouldBeDown;
+                }
             }
             _pedalStateNeedsResync = false;
         }
@@ -539,7 +557,6 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
                     Logger.LogInputOutput($"{pedal.Name.ToUpper()}_UP (reconcile) key={pedalKey.Value}");
             }
         }
-        SyncPedalStatesToUI();
     }
 
     private void SyncPedalStatesToUI()
@@ -560,28 +577,26 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
         {
             pedal.ChannelsDown.Clear();
 
-            if (layoutConfig == null) continue;
-
-            VirtualKeyCode? pedalKey = pedal.CcNumber switch
+            if (layoutConfig != null)
             {
-                64 => layoutConfig.SustainKey,
-                66 => layoutConfig.SostenutoKey,
-                67 => layoutConfig.UnaCordaKey,
-                _ => null
-            };
-            
-            if (pedalKey is not null && pedal.IsCurrentlyHeldInGame)
-            {
-                // If focused or using window messages, release cleanly
-                if (KeyboardPlayer.UseWindowMessage || WindowHelper.IsGameFocused())
+                VirtualKeyCode? pedalKey = pedal.CcNumber switch
                 {
-                    KeyboardPlayer.PedalUp(pedalKey.Value);
-                }
+                    64 => layoutConfig.SustainKey,
+                    66 => layoutConfig.SostenutoKey,
+                    67 => layoutConfig.UnaCordaKey,
+                    _ => null
+                };
                 
-                // Reset internal state. We don't need to try and preserve it across focus loss anymore,
-                // because Playback.Started will now forcefully resync the state upon resuming!
-                pedal.IsCurrentlyHeldInGame = false;
+                if (pedalKey is not null && pedal.IsCurrentlyHeldInGame)
+                {
+                    if (KeyboardPlayer.UseWindowMessage || WindowHelper.IsGameFocused())
+                    {
+                        KeyboardPlayer.PedalUp(pedalKey.Value);
+                    }
+                }
             }
+
+            pedal.IsCurrentlyHeldInGame = false;
         }
         SyncPedalStatesToUI();
 

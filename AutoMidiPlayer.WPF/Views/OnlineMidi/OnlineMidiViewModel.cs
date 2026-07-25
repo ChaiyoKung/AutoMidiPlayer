@@ -476,6 +476,8 @@ public sealed class OnlineMidiViewModel : Screen
             SelectedCategorySlug = "";
             SelectedCategoryName = "All categories";
             NotifyOfPropertyChange(nameof(SelectedCategoryName));
+            _selectedCategoryOption = CategoryOptions[0];
+            NotifyOfPropertyChange(nameof(SelectedCategoryOption));
         }
 
         CurrentPage = 1;
@@ -523,6 +525,76 @@ public sealed class OnlineMidiViewModel : Screen
         await LoadAsync();
     }
 
+    public class FilterOption
+    {
+        public string Key { get; }
+        public string Name { get; }
+        public string Icon { get; }
+
+        public FilterOption(string key, string name, string icon = "")
+        {
+            Key = key;
+            Name = name;
+            Icon = icon;
+        }
+    }
+
+    public static IReadOnlyList<FilterOption> CategoryOptions { get; } = new List<FilterOption>
+    {
+        new("", "All categories"),
+        new("pop-music", "Pop Music"),
+        new("game-music", "Anime / Game music"),
+        new("movie_tv_soundtrack", "Film Score"),
+        new("classical-music", "Classical Music"),
+        new("electronic-music", "Electronic Music"),
+        new("rock-and-roll", "Rock"),
+        new("jazz-and-blues", "Jazz"),
+        new("country-music", "Country Music"),
+        new("rhythm-and-blues", "Rhythm & Blues"),
+        new("hip-hop-and-rap", "Hip / Rap Music"),
+        new("latin-music", "Latin"),
+        new("national-music", "Folk Music"),
+        new("folk-music", "Ballad"),
+        new("easy-listening-music", "Easy Listening"),
+        new("childrens-music", "Children's Music"),
+        new("religious-music", "Religious Music"),
+        new("other-music", "Other Music")
+    };
+
+    public static IReadOnlyList<FilterOption> SortOptions { get; } = new List<FilterOption>
+    {
+        new("", "Newest", "ArrowTrending12"),
+        new("time_asc", "Oldest", "Clock12"),
+        new("popularity", "Most popular", "Fire24"),
+        new("marks", "Highest rated", "StarEmphasis24")
+    };
+
+    private FilterOption _selectedCategoryOption = CategoryOptions[0];
+    public FilterOption SelectedCategoryOption
+    {
+        get => _selectedCategoryOption;
+        set
+        {
+            if (SetAndNotify(ref _selectedCategoryOption, value))
+            {
+                _ = SetCategory(value.Key, value.Name);
+            }
+        }
+    }
+
+    private FilterOption _selectedSortOption = SortOptions[0];
+    public FilterOption SelectedSortOption
+    {
+        get => _selectedSortOption;
+        set
+        {
+            if (SetAndNotify(ref _selectedSortOption, value))
+            {
+                _ = SetSort(value.Key);
+            }
+        }
+    }
+
     /// <summary>Opens the MidiShow account registration page in the default browser.</summary>
     public void OpenRegisterPage()
     {
@@ -559,6 +631,16 @@ public sealed class OnlineMidiViewModel : Screen
             return;
 
         CurrentPage--;
+        await LoadAsync();
+    }
+
+    public async Task GoToPage(int page)
+    {
+        if (IsBusy || page < 1 || page == CurrentPage)
+            return;
+
+        CurrentPage = page;
+        _reachedEnd = false;
         await LoadAsync();
     }
 

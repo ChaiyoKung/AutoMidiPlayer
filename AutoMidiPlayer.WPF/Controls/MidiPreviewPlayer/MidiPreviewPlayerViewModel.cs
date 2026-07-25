@@ -45,6 +45,9 @@ public class MidiPreviewPlayerViewModel : PropertyChangedBase
             _previewPositionSeconds = value;
             NotifyOfPropertyChange(nameof(PreviewPositionSeconds));
             
+            PreviewPositionText = FormatTime(TimeSpan.FromSeconds(value));
+            NotifyOfPropertyChange(nameof(PreviewPositionText));
+            
             if (!IsPreviewScrubbing)
             {
                 DisplayPreviewPositionSeconds = value;
@@ -60,9 +63,6 @@ public class MidiPreviewPlayerViewModel : PropertyChangedBase
         {
             _displayPreviewPositionSeconds = value;
             NotifyOfPropertyChange(nameof(DisplayPreviewPositionSeconds));
-            
-            PreviewPositionText = FormatTime(TimeSpan.FromSeconds(value));
-            NotifyOfPropertyChange(nameof(PreviewPositionText));
         }
     }
     

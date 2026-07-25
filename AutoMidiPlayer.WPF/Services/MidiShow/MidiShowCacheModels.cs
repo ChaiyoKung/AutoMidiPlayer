@@ -15,6 +15,15 @@ public sealed class CacheEntry<T>
 }
 
 /// <summary>
+/// JSON-serializable wrapper for a page of search/browse results.
+/// </summary>
+public sealed class CachedMidiShowPageResult
+{
+    public List<CachedMidiShowItem> Items { get; set; } = new();
+    public string StatusText { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// JSON-serializable mirror of <see cref="MidiShowItem"/> for disk caching.
 /// Uses plain auto-properties so System.Text.Json can round-trip them without
 /// pulling in Stylet or WPF dependencies.

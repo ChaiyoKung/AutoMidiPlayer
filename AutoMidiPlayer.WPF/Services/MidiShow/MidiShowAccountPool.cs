@@ -259,7 +259,7 @@ public sealed class MidiShowAccountPool : IDisposable
         }
 
         var result = await _browseClient.BrowseAsync(page, sort, category, ct);
-        _ = MidiShowCache.SaveBrowsePageAsync(page, sort, category, result.Items);
+        _ = MidiShowCache.SaveBrowsePageAsync(page, sort, category, result);
         // Fire-and-forget: persist each item's summary so detail-expand is faster next time.
         _ = MidiShowCache.SaveSummariesAsync(result.Items);
         return result;
@@ -275,7 +275,7 @@ public sealed class MidiShowAccountPool : IDisposable
         }
 
         var result = await _browseClient.SearchAsync(query, page, sort, ct);
-        _ = MidiShowCache.SaveSearchPageAsync(query, page, sort, result.Items);
+        _ = MidiShowCache.SaveSearchPageAsync(query, page, sort, result);
         _ = MidiShowCache.SaveSummariesAsync(result.Items);
         return result;
     }

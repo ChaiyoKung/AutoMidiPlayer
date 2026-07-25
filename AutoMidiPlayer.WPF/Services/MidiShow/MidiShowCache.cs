@@ -47,12 +47,12 @@ public static class MidiShowCache
 
     #region Page Listings
 
-    public static async Task SaveBrowsePageAsync(int page, string sort, string category, IEnumerable<MidiShowItem> items)
+    public static async Task SaveBrowsePageAsync(int page, string sort, string category, MidiShowPageResult result)
     {
         try
         {
             var fileName = $"browse_p{page}_s{sort}_c{category}.json".Replace(" ", "_");
-            await SavePageInternalAsync(fileName, items);
+            await SavePageInternalAsync(fileName, result);
         }
         catch { }
     }
@@ -63,14 +63,14 @@ public static class MidiShowCache
         return TryLoadPageInternal(fileName);
     }
 
-    public static async Task SaveSearchPageAsync(string query, int page, string sort, IEnumerable<MidiShowItem> items)
+    public static async Task SaveSearchPageAsync(string query, int page, string sort, MidiShowPageResult result)
     {
         try
         {
             // Hash the query to avoid invalid file characters
             var queryHash = HashUrl(query.ToLowerInvariant());
             var fileName = $"search_{queryHash}_p{page}_s{sort}.json";
-            await SavePageInternalAsync(fileName, items);
+            await SavePageInternalAsync(fileName, result);
         }
         catch { }
     }
@@ -82,13 +82,17 @@ public static class MidiShowCache
         return TryLoadPageInternal(fileName);
     }
 
-    private static async Task SavePageInternalAsync(string fileName, IEnumerable<MidiShowItem> items)
+    private static async Task SavePageInternalAsync(string fileName, MidiShowPageResult result)
     {
         AppPaths.EnsureDiscoverCacheDirectories();
         var path = Path.Combine(AppPaths.DiscoverCacheDirectory, fileName);
-        var entry = new CacheEntry<List<CachedMidiShowItem>>
+        var entry = new CacheEntry<CachedMidiShowPageResult>
         {
-            Data = items.Select(CachedMidiShowItem.From).ToList(),
+            Data = new CachedMidiShowPageResult
+            {
+                Items = result.Items.Select(CachedMidiShowItem.From).ToList(),
+                StatusText = result.StatusText
+            },
             CachedAtUtc = DateTime.UtcNow
         };
         var json = JsonSerializer.Serialize(entry, JsonOptions);
@@ -104,14 +108,37 @@ public static class MidiShowCache
                 return null;
 
             var json = File.ReadAllText(path);
-            var entry = JsonSerializer.Deserialize<CacheEntry<List<CachedMidiShowItem>>>(json, JsonOptions);
             
-            if (entry?.Data is null || DateTime.UtcNow - entry.CachedAtUtc > PageTtl)
-                return null;
+            // Try to deserialize as the new format first.
+            try
+            {
+                var entry = JsonSerializer.Deserialize<CacheEntry<CachedMidiShowPageResult>>(json, JsonOptions);
+                if (entry?.Data != null)
+                {
+                    if (DateTime.UtcNow - entry.CachedAtUtc > PageTtl)
+                        return null;
 
-            TouchFile(path);
-            var items = entry.Data.ConvertAll(d => d.ToItem());
-            return new MidiShowPageResult(items, "");
+                    TouchFile(path);
+                    var items = entry.Data.Items.ConvertAll(d => d.ToItem());
+                    return new MidiShowPageResult(items, entry.Data.StatusText ?? "");
+                }
+            }
+            catch
+            {
+                // Fallback for old cache format
+                var oldEntry = JsonSerializer.Deserialize<CacheEntry<List<CachedMidiShowItem>>>(json, JsonOptions);
+                if (oldEntry?.Data != null)
+                {
+                    if (DateTime.UtcNow - oldEntry.CachedAtUtc > PageTtl)
+                        return null;
+
+                    TouchFile(path);
+                    var items = oldEntry.Data.ConvertAll(d => d.ToItem());
+                    return new MidiShowPageResult(items, "");
+                }
+            }
+
+            return null;
         }
         catch
         {

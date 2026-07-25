@@ -11,15 +11,27 @@
                                       MinimumVisibleDuration="{Binding MinimumVisibleDuration, ElementName=Root}"
                                       Visibility="Collapsed"/>
 
-        <controls:Button Variant="Ghost"
-                         Icon="{Binding IconSymbol, ElementName=Root}"
-                         IconFontSize="{Binding IconFontSize, ElementName=Root}"
-                         IconFilled="{Binding IconFilled, ElementName=Root}"
-                         Command="{Binding Command, ElementName=Root}"
-                         CommandParameter="{Binding CommandParameter, ElementName=Root}"
-                         Padding="{Binding ButtonPadding, ElementName=Root}"
-                         ToolTip="{Binding ButtonToolTip, ElementName=Root}"
-                         Visibility="{Binding IsVisibleBusy, ElementName=BusyState, Converter={x:Static s:BoolToVisibilityConverter.InverseInstance}}"/>
+        <Border>
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Opacity" Value="1"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsVisibleBusy, ElementName=BusyState}" Value="True">
+                            <Setter Property="Opacity" Value="0"/>
+                            <Setter Property="IsHitTestVisible" Value="False"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <controls:Button Variant="Ghost"
+                             Icon="{Binding IconSymbol, ElementName=Root}"
+                             IconFontSize="{Binding IconFontSize, ElementName=Root}"
+                             IconFilled="{Binding IconFilled, ElementName=Root}"
+                             Command="{Binding Command, ElementName=Root}"
+                             CommandParameter="{Binding CommandParameter, ElementName=Root}"
+                             Padding="{Binding ButtonPadding, ElementName=Root}"
+                             ToolTip="{Binding ButtonToolTip, ElementName=Root}" />
+        </Border>
 
         <ui:ProgressRing IsIndeterminate="True"
                          Width="{Binding IndicatorSize, ElementName=Root}"

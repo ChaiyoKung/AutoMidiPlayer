@@ -189,6 +189,23 @@ public partial class OnlineMidiView : UserControl
         }
     }
 
+    private void PageInput_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && sender is TextBox tb && ViewModel is { } vm)
+        {
+            e.Handled = true;
+            if (int.TryParse(tb.Text, out int page))
+            {
+                _ = vm.GoToPage(page);
+            }
+            else
+            {
+                tb.Text = vm.CurrentPage.ToString();
+            }
+            Keyboard.ClearFocus();
+        }
+    }
+
 
 
     private void AddToSongs_Click(object sender, RoutedEventArgs e)
@@ -209,17 +226,6 @@ public partial class OnlineMidiView : UserControl
             _ = vm.PreviewAsync(item);
     }
 
-    private void Sort_Click(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel is { } vm && sender is MenuItem { Tag: string key })
-            _ = vm.SetSort(key);
-    }
-
-    private void Category_Click(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel is { } vm && sender is MenuItem { Tag: string slug } item)
-            _ = vm.SetCategory(slug, item.Header?.ToString() ?? "");
-    }
 
     private void Card_Click(object sender, RoutedEventArgs e)
     {

@@ -57,6 +57,7 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
     private bool _pedalStateNeedsResync;
     private readonly Dictionary<int, (int SourceNote, int OutputNote, string KeyName, int Velocity, long StartMs)> _activeNotes = new();
     private readonly Dictionary<(int Channel, int NoteNumber), int> _activeSpeakerNotes = new();
+    private readonly HashSet<(int Note, string Layout, string Instrument)> _activeGameNotes = new();
 
     private class PedalState
     {
@@ -203,6 +204,7 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
     public void ResetPlayback()
     {
         ReleaseSustainIfActive();
+        SilenceSpeakers();
 
         var old = Playback;
         Playback = null;
@@ -269,6 +271,7 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
         _scheduledEventTicks = 0;
         _activeNotes.Clear();
         _activeSpeakerNotes.Clear();
+        _activeGameNotes.Clear();
         foreach (var pedal in AllPedals) pedal.Clear();
         _loggedSongContextForNotes = false;
         playback.Finished += (_, _) =>
@@ -278,6 +281,7 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
             // it doesn't keep overriding the slider position after the song ends.
             _timeWatcher.Stop();
             ReleaseSustainIfActive();
+            SilenceSpeakers();
 
             // Marshal to UI thread to avoid cross-thread issues
             // Only auto-next if this playback is still the current one
@@ -295,6 +299,7 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
             _scheduledEventTicks = 0;
             _activeNotes.Clear();
             _activeSpeakerNotes.Clear();
+            _activeGameNotes.Clear();
             foreach (var pedal in AllPedals) pedal.Clear();
             _loggedSongContextForNotes = false;
 
@@ -350,6 +355,7 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
         {
             _timeWatcher.Stop();
             ReleaseSustainIfActive();
+            SilenceSpeakers();
             Controls.UpdateButtons();
             Controls.NotifyPlaybackStateChanged();
 
@@ -578,6 +584,38 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
             }
         }
         SyncPedalStatesToUI();
+
+        foreach (var activeNote in _activeGameNotes)
+        {
+            KeyboardPlayer.NoteUp(activeNote.Note, activeNote.Layout, activeNote.Instrument);
+        }
+        _activeGameNotes.Clear();
+    }
+
+    private void SilenceSpeakers()
+    {
+        if (_speakers is null)
+            return;
+
+        foreach (var activeNote in _activeSpeakerNotes)
+        {
+            var (channel, noteNumber) = activeNote.Key;
+            var noteOff = new NoteOffEvent(new SevenBitNumber((byte)noteNumber), new SevenBitNumber(0))
+            {
+                Channel = new FourBitNumber((byte)channel)
+            };
+            _speakers.SendEvent(noteOff);
+        }
+        _activeSpeakerNotes.Clear();
+
+        for (byte i = 0; i < 16; i++)
+        {
+            var channel = new FourBitNumber(i);
+            _speakers.SendEvent(new ControlChangeEvent(new SevenBitNumber(123), new SevenBitNumber(0)) { Channel = channel });
+            _speakers.SendEvent(new ControlChangeEvent(new SevenBitNumber(64), new SevenBitNumber(0)) { Channel = channel });
+            _speakers.SendEvent(new ControlChangeEvent(new SevenBitNumber(66), new SevenBitNumber(0)) { Channel = channel });
+            _speakers.SendEvent(new ControlChangeEvent(new SevenBitNumber(67), new SevenBitNumber(0)) { Channel = channel });
+        }
     }
 
     private void PlayNote(NoteEvent noteEvent)
@@ -652,12 +690,16 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
                     if (ShouldLogPlayedNotes)
                         LogNoteInputOutput("game", noteEvent, sourceNote, noteForKeyboard, hasMappedKey, mappedKey);
 
+                    _activeGameNotes.Remove((noteForKeyboard, layout, instrument));
                     KeyboardPlayer.NoteUp(noteForKeyboard, layout, instrument);
                     break;
                 case MidiEventType.NoteOn when noteEvent.Velocity <= 0:
                     if (ShouldLogPlayedNotes)
                         LogNoteInputOutput("game", noteEvent, sourceNote, noteForKeyboard, hasMappedKey, mappedKey);
 
+                    _activeGameNotes.Remove((noteForKeyboard, layout, instrument));
+                    // Also fire NoteUp here since velocity 0 is a NoteOff equivalent
+                    KeyboardPlayer.NoteUp(noteForKeyboard, layout, instrument);
                     return;
                 case MidiEventType.NoteOn:
                     if (!hasMappedKey)
@@ -669,9 +711,14 @@ public class PlaybackEngineService : PropertyChangedBase, IHandle<MidiFile>, IHa
                         LogNoteInputOutput("game", noteEvent, sourceNote, noteForKeyboard, hasMappedKey, mappedKey);
 
                     if (useHoldNotes)
+                    {
+                        _activeGameNotes.Add((noteForKeyboard, layout, instrument));
                         KeyboardPlayer.NoteDown(noteForKeyboard, layout, instrument);
+                    }
                     else
+                    {
                         KeyboardPlayer.PlayNote(noteForKeyboard, layout, instrument);
+                    }
                     break;
             }
         }

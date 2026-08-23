@@ -441,6 +441,18 @@ namespace AutoMidiPlayer.Data.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Client-Win64-Shipping.exe")]
+        public string WutheringWavesLocation {
+            get {
+                return ((string)(this["WutheringWavesLocation"]));
+            }
+            set {
+                this["WutheringWavesLocation"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool ActiveGenshin {
             get {
@@ -523,6 +535,18 @@ namespace AutoMidiPlayer.Data.Properties {
             }
         }
         
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool ActiveWutheringWaves {
+            get {
+                return ((bool)(this["ActiveWutheringWaves"]));
+            }
+            set {
+                this["ActiveWutheringWaves"] = value;
+            }
+        }
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0")]

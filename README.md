@@ -21,6 +21,7 @@ https://github.com/user-attachments/assets/8e7d8dec-33c4-4d2b-a268-4abd1dbac405
 
 ### Supported Games and Instruments
 - **Genshin Impact** - Windsong Lyre, Floral Zither, Vintage Lyre
+- **Wuthering Waves** - 21-key instruments (shared QWERTY mapping)
 - **Heartopia** - Piano (All variations), 15-key instruments (e.g. lyre, wooden bass, violin, etc.)
 - **Roblox** - Piano (61-key & 88-key)
 - **Sky: Children of the Light** - All available Sky instruments as of Feb 2026
@@ -44,7 +45,7 @@ See the [Support wiki page][wiki-support] for details on supported games, instru
 ## Features
 
 ### Core Features
-* **Multi-game support** - Play on Genshin Impact, Sky, Roblox and Heartopia
+* **Multi-game support** - Play on Genshin Impact, Wuthering Waves, Sky, Roblox and Heartopia
 * **Spotify-style UI** - Modern player interface with fixed bottom controls
 * **Per-song Settings** - Key offset, transpose, speed, and BPM settings are saved for each song
 
@@ -85,6 +86,7 @@ MIDI files (.mid) are a set of instructions that play various instruments on wha
 ### Can this get me banned?
 The short answer is that it's uncertain. Use it at your own risk. Do not play songs that will spam the keyboard, listen to the MIDI file first and make sure to play only one instrument so that the tool doesn't spam keyboard inputs.
 * For Genshin Impact, here is [miHoYo's response](https://genshin.mihoyo.com/en/news/detail/5763) to using 3rd party tools.
+* For Wuthering Waves, review KURO's [User Agreement](https://wutheringwaves.kurogames.com/p/agreement_public.html) restrictions on unauthorized third-party software.
 * For Heartopia, here is their [Official Discord message](https://discord.com/channels/1128257488375005215/1460985755529773301/1465702188700405986) about using 3rd party tools.
 * For Sky, see their policy on [third-party apps](https://thatgamecompany.helpshift.com/hc/en/17-sky-children-of-the-light/faq/1250-can-i-use-or-create-third-party-applications-like-mods-or-bots/).
 * For Roblox, refer to their [third-party services Terms of Use](https://en.help.roblox.com/hc/en-us/articles/115004647846-Roblox-Terms-of-Use#third-party-services).
@@ -135,7 +137,7 @@ This project was originally forked from **[sabihoshi/GenshinLyreMidiPlayer][Gens
 * This project’s source code is licensed under the [GNU General Public License v3.0](LICENSE).
 * This project is based on [sabihoshi/GenshinLyreMidiPlayer][GenshinLyreMidiPlayer]. Original attribution and upstream notices are preserved in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 * "**Auto MIDI Player**" and its logo are trademarks of Jed556. Trademark and branding use are governed by [TRADEMARK.md](TRADEMARK.md).
-* This project is not affiliated with or endorsed by miHoYo, XD, thatgamecompany, Roblox Corporation, Hotta Studio, or any other rights holder. Genshin Impact™, Heartopia™, Sky: Children of the Light™, Roblox™, Neverness to Everness™, and other game titles and properties belong to their respective owners.
+* This project is not affiliated with or endorsed by miHoYo, KURO GAMES, XD, thatgamecompany, Roblox Corporation, Hotta Studio, or any other rights holder. Genshin Impact™, Wuthering Waves™, Heartopia™, Sky: Children of the Light™, Roblox™, Neverness to Everness™, and other game titles and properties belong to their respective owners.
 * Third-party libraries and other resources used by this project may be distributed under different licenses and are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 <br/>

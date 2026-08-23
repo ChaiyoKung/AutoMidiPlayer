@@ -107,6 +107,9 @@
     <Setting Name="HPMALocation" Type="System.String" Scope="User">
       <Value Profile="(Default)">Harry Potter Magic Awakened.exe</Value>
     </Setting>
+    <Setting Name="WutheringWavesLocation" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Client-Win64-Shipping.exe</Value>
+    </Setting>
     <Setting Name="ActiveGenshin" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
@@ -126,6 +129,9 @@
       <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="ActiveHPMA" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="ActiveWutheringWaves" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="SelectedInstrument" Type="System.Int32" Scope="User">

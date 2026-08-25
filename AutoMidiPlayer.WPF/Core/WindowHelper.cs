@@ -116,10 +116,20 @@ public static class WindowHelper
         {
             try
             {
-                var process = Process.GetProcessesByName(processName);
-                var handle = process.FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero)?.MainWindowHandle;
-                if (handle.HasValue && handle.Value != IntPtr.Zero)
-                    return handle;
+                var processes = Process.GetProcessesByName(processName);
+                try
+                {
+                    var handle = processes.FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero)?.MainWindowHandle;
+                    if (handle.HasValue && handle.Value != IntPtr.Zero)
+                        return handle;
+                }
+                finally
+                {
+                    foreach (var p in processes)
+                    {
+                        p.Dispose();
+                    }
+                }
             }
             catch
             {

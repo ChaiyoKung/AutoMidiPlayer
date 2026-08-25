@@ -181,11 +181,12 @@ public static class GameRegistry
 
         try
         {
-            foreach (var process in Process.GetProcesses())
+            foreach (var processName in processNames)
             {
-                using (process)
+                var processes = Process.GetProcessesByName(processName);
+                try
                 {
-                    if (processNames.Contains(process.ProcessName))
+                    foreach (var process in processes)
                     {
                         if (game.WindowNames.Count > 0)
                         {
@@ -196,6 +197,13 @@ public static class GameRegistry
                         {
                             return true;
                         }
+                    }
+                }
+                finally
+                {
+                    foreach (var process in processes)
+                    {
+                        process.Dispose();
                     }
                 }
             }

@@ -58,6 +58,20 @@ public class Bootstrapper : Bootstrapper<MainWindowViewModel>
 
     public Bootstrapper()
     {
+        System.Runtime.Loader.AssemblyLoadContext.Default.Resolving += (context, assemblyName) =>
+        {
+            if (assemblyName.Name != null)
+            {
+                var path = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, assemblyName.Name + ".dll");
+                if (System.IO.File.Exists(path))
+                {
+                    return context.LoadFromAssemblyPath(path);
+                }
+            }
+            return null;
+        };
+
+        SQLitePCL.Batteries.Init();
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
         // Suppress benign Storyboard animation warnings from WPF-UI (idk why this happens XD)

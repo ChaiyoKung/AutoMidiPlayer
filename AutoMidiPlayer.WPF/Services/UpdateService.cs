@@ -421,15 +421,39 @@ public class UpdateService
         }
     }
 
+    private static bool HasWriteAccessToDirectory(string folderPath)
+    {
+        try
+        {
+            var testPath = Path.Combine(folderPath, Guid.NewGuid().ToString() + ".tmp");
+            using (File.Create(testPath, 1, FileOptions.DeleteOnClose)) { }
+            File.Delete(testPath);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private static void StartHelperProcess(string shellPath, string arguments)
     {
+        var appDir = AppDomain.CurrentDomain.BaseDirectory;
+        var needsAdmin = !HasWriteAccessToDirectory(appDir);
+
         var startInfo = new ProcessStartInfo
         {
             FileName = shellPath,
             Arguments = arguments,
-            UseShellExecute = false,
-            CreateNoWindow = true
+            UseShellExecute = needsAdmin,
+            CreateNoWindow = !needsAdmin
         };
+
+        if (needsAdmin)
+        {
+            startInfo.Verb = "runas";
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        }
 
         var process = Process.Start(startInfo);
         if (process is null)

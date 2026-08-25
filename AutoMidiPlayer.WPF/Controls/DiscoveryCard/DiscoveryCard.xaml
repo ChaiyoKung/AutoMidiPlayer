@@ -260,26 +260,26 @@
                                     Opacity="0.7"
                                     FontSize="12"/>
                         </StackPanel>
-                        <Grid VerticalAlignment="Center">
-                            <Grid.Style>
-                                <Style TargetType="Grid">
-                                    <Setter Property="LayoutTransform">
-                                        <Setter.Value>
-                                            <ScaleTransform ScaleX="0"/>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Setter Property="Opacity" Value="0"/>
-                                    <Style.Triggers>
+                        <ContentControl VerticalAlignment="Center" IsTabStop="False">
+                            <ContentControl.Template>
+                                <ControlTemplate TargetType="ContentControl">
+                                    <Grid x:Name="BpmGrid" Opacity="0">
+                                        <Grid.LayoutTransform>
+                                            <ScaleTransform x:Name="BpmScale" ScaleX="0"/>
+                                        </Grid.LayoutTransform>
+                                        <ContentPresenter />
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
                                         <DataTrigger Binding="{Binding IsBpmSectionVisible}" Value="True">
                                             <DataTrigger.EnterActions>
                                                 <BeginStoryboard>
                                                     <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetProperty="(FrameworkElement.LayoutTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.35">
+                                                        <DoubleAnimation Storyboard.TargetName="BpmScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.35">
                                                             <DoubleAnimation.EasingFunction>
                                                                 <QuadraticEase EasingMode="EaseOut" />
                                                             </DoubleAnimation.EasingFunction>
                                                         </DoubleAnimation>
-                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.25" BeginTime="0:0:0.1">
+                                                        <DoubleAnimation Storyboard.TargetName="BpmGrid" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.25" BeginTime="0:0:0.1">
                                                             <DoubleAnimation.EasingFunction>
                                                                 <QuadraticEase EasingMode="EaseOut" />
                                                             </DoubleAnimation.EasingFunction>
@@ -290,12 +290,12 @@
                                             <DataTrigger.ExitActions>
                                                 <BeginStoryboard>
                                                     <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2">
+                                                        <DoubleAnimation Storyboard.TargetName="BpmGrid" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2">
                                                             <DoubleAnimation.EasingFunction>
                                                                 <QuadraticEase EasingMode="EaseIn" />
                                                             </DoubleAnimation.EasingFunction>
                                                         </DoubleAnimation>
-                                                        <DoubleAnimation Storyboard.TargetProperty="(FrameworkElement.LayoutTransform).(ScaleTransform.ScaleX)" To="0" Duration="0:0:0.3" BeginTime="0:0:0.05">
+                                                        <DoubleAnimation Storyboard.TargetName="BpmScale" Storyboard.TargetProperty="ScaleX" To="0" Duration="0:0:0.3" BeginTime="0:0:0.05">
                                                             <DoubleAnimation.EasingFunction>
                                                                 <QuadraticEase EasingMode="EaseIn" />
                                                             </DoubleAnimation.EasingFunction>
@@ -304,19 +304,20 @@
                                                 </BeginStoryboard>
                                             </DataTrigger.ExitActions>
                                         </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Grid.Style>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ContentControl.Template>
+                            <Grid>
+                                <controls:SkeletonBlock x:Name="SkeletonBpm" Width="36" Margin="0,0,14,0" HorizontalAlignment="Left" Visibility="{Binding IsLoadingDetails, Converter={x:Static s:BoolToVisibilityConverter.Instance}}">
+                                    <TextBlock Text="A" FontSize="12" Visibility="Hidden"/>
+                                </controls:SkeletonBlock>
 
-                            <controls:SkeletonBlock x:Name="SkeletonBpm" Width="36" Margin="0,0,14,0" HorizontalAlignment="Left" Visibility="{Binding IsLoadingDetails, Converter={x:Static s:BoolToVisibilityConverter.Instance}}">
-                                <TextBlock Text="A" FontSize="12" Visibility="Hidden"/>
-                            </controls:SkeletonBlock>
-
-                            <StackPanel x:Name="BpmContent" Orientation="Horizontal" Margin="0,0,14,0" HorizontalAlignment="Left" ToolTipService.ToolTip="BPM" Visibility="{Binding Details.HasBpm, Converter={x:Static s:BoolToVisibilityConverter.Instance}, FallbackValue=Collapsed, TargetNullValue=Collapsed}">
-                                <ui:SymbolIcon Symbol="Timer24" FontSize="12" Opacity="0.55" Margin="0,0,4,0"/>
-                                <TextBlock Text="{Binding Details.Bpm}" Opacity="0.7" FontSize="12"/>
-                            </StackPanel>
-                        </Grid>
+                                <StackPanel x:Name="BpmContent" Orientation="Horizontal" Margin="0,0,14,0" HorizontalAlignment="Left" ToolTipService.ToolTip="BPM" Visibility="{Binding Details.HasBpm, Converter={x:Static s:BoolToVisibilityConverter.Instance}, FallbackValue=Collapsed, TargetNullValue=Collapsed}">
+                                    <ui:SymbolIcon Symbol="Timer24" FontSize="12" Opacity="0.55" Margin="0,0,4,0"/>
+                                    <TextBlock Text="{Binding Details.Bpm}" Opacity="0.7" FontSize="12"/>
+                                </StackPanel>
+                            </Grid>
+                        </ContentControl>
 
                         <StackPanel Orientation="Horizontal"
                                 Margin="0,0,14,0"
@@ -483,31 +484,36 @@
             </Border>
             
             <!-- Accordion Details -->
-            <Border Grid.Row="1"
-                    Margin="0,-4,0,0"
-                    Padding="14,14,14,14"
-                    Background="#0F000000"
-                    CornerRadius="0,0,6,6"
-                    Panel.ZIndex="-1"
-                    ClipToBounds="True">
-                <Border.LayoutTransform>
-                    <ScaleTransform ScaleY="0" />
-                </Border.LayoutTransform>
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Opacity" Value="0" />
-                        <Style.Triggers>
+            <ContentControl Grid.Row="1" IsTabStop="False">
+                <ContentControl.Template>
+                    <ControlTemplate TargetType="ContentControl">
+                        <Border x:Name="AccordionDetailsBorder"
+                                Margin="0,-4,0,0"
+                                Padding="14,14,14,14"
+                                Background="#0F000000"
+                                CornerRadius="0,0,6,6"
+                                Panel.ZIndex="-1"
+                                ClipToBounds="True"
+                                Opacity="0">
+                            <Border.LayoutTransform>
+                                <ScaleTransform x:Name="AccordionScaleTransform" ScaleY="0" />
+                            </Border.LayoutTransform>
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
                             <DataTrigger Binding="{Binding IsExpanded}" Value="True">
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="(FrameworkElement.LayoutTransform).(ScaleTransform.ScaleY)"
+                                            <DoubleAnimation Storyboard.TargetName="AccordionScaleTransform"
+                                                             Storyboard.TargetProperty="ScaleY"
                                                              To="1" Duration="0:0:0.25">
                                                 <DoubleAnimation.EasingFunction>
                                                     <QuadraticEase EasingMode="EaseOut" />
                                                 </DoubleAnimation.EasingFunction>
                                             </DoubleAnimation>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                            <DoubleAnimation Storyboard.TargetName="AccordionDetailsBorder"
+                                                             Storyboard.TargetProperty="Opacity"
                                                              To="1" Duration="0:0:0.2" BeginTime="0:0:0.05">
                                                 <DoubleAnimation.EasingFunction>
                                                     <QuadraticEase EasingMode="EaseOut" />
@@ -519,13 +525,15 @@
                                 <DataTrigger.ExitActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="(FrameworkElement.LayoutTransform).(ScaleTransform.ScaleY)"
+                                            <DoubleAnimation Storyboard.TargetName="AccordionScaleTransform"
+                                                             Storyboard.TargetProperty="ScaleY"
                                                              To="0" Duration="0:0:0.2">
                                                 <DoubleAnimation.EasingFunction>
                                                     <QuadraticEase EasingMode="EaseIn" />
                                                 </DoubleAnimation.EasingFunction>
                                             </DoubleAnimation>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                            <DoubleAnimation Storyboard.TargetName="AccordionDetailsBorder"
+                                                             Storyboard.TargetProperty="Opacity"
                                                              To="0" Duration="0:0:0.15">
                                                 <DoubleAnimation.EasingFunction>
                                                     <QuadraticEase EasingMode="EaseIn" />
@@ -535,9 +543,9 @@
                                     </BeginStoryboard>
                                 </DataTrigger.ExitActions>
                             </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </ContentControl.Template>
                 <Grid>
                     <ui:ProgressRing IsIndeterminate="True"
                                      Width="32" Height="32"
@@ -633,6 +641,6 @@
                         </Grid>
                     </StackPanel>
                 </Grid>
-            </Border>
+            </ContentControl>
     </Grid>
 </UserControl>

@@ -89,14 +89,27 @@ public class MidiPreviewPlayerViewModel : PropertyChangedBase
 
     public void Play(byte[] data, string title, string? uploader, string? avatarUrl, OutputDevice synth)
     {
+        _preview.Play(data, synth);
+
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is not null && !dispatcher.CheckAccess())
+        {
+            dispatcher.Invoke(() => UpdatePropertiesAndTimer(title, uploader, avatarUrl));
+        }
+        else
+        {
+            UpdatePropertiesAndTimer(title, uploader, avatarUrl);
+        }
+    }
+
+    private void UpdatePropertiesAndTimer(string title, string? uploader, string? avatarUrl)
+    {
         PreviewTitle = title;
         PreviewUploader = uploader ?? string.Empty;
         PreviewAvatarUrl = avatarUrl ?? string.Empty;
         IsPreviewActive = true;
         IsPreviewPlaying = true;
         
-        _preview.Play(data, synth);
-
         PreviewDurationSeconds = Math.Max(0.1, _preview.Duration.TotalSeconds);
         PreviewPositionSeconds = 0;
         PreviewDurationText = FormatTime(_preview.Duration);

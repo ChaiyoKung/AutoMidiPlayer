@@ -273,5 +273,8 @@
 &lt;/SerializableConnectionString&gt;</DesignTimeValue>
       <Value Profile="(Default)">history.db</Value>
     </Setting>
+    <Setting Name="LastOptedOutLogDate" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">1900-01-01</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

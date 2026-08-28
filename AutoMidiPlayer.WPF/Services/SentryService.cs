@@ -58,18 +58,11 @@ public class SentryService : ISentryService
     {
         if (Settings.Default.TelemetryOptIn && Settings.Default.HasShownFirstLaunch)
         {
-            if (Settings.Default.ReportedOptEventStatus != 1)
-            {
-                StartSentry(); // StartSentry will handle sending "opted in"
-            }
-            else
-            {
-                StartSentry(); // Start it anyway without sending the "opted in" event if it was already sent
-            }
+            StartSentry();
         }
         else if (!Settings.Default.TelemetryOptIn && Settings.Default.HasShownFirstLaunch)
         {
-            if (Settings.Default.ReportedOptEventStatus != 2)
+            if (DateTime.Now - Settings.Default.LastOptedOutLogDate >= TimeSpan.FromDays(30))
             {
                 ReportOptOut();
             }
@@ -84,10 +77,7 @@ public class SentryService : ISentryService
         }
         else if (!enabled)
         {
-            if (Settings.Default.ReportedOptEventStatus != 2)
-            {
-                ReportOptOut();
-            }
+            ReportOptOut();
 
             if (SentrySdk.IsEnabled)
             {
@@ -121,6 +111,10 @@ public class SentryService : ISentryService
                 sentryEvent.ServerName = null;
                 sentryEvent.Release = null;
                 sentryEvent.Environment = null;
+                
+                sentryEvent.SetTag("Opted", "out");
+                sentryEvent.SetTag("distribution", AppPaths.DistributionType.ToLowerInvariant());
+
                 return sentryEvent;
             });
         });
@@ -128,7 +122,7 @@ public class SentryService : ISentryService
         SentrySdk.CaptureMessage("User opted out of telemetry", SentryLevel.Info);
         SentrySdk.FlushAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
         
-        Settings.Default.ReportedOptEventStatus = 2;
+        Settings.Default.LastOptedOutLogDate = DateTime.Now;
         Settings.Default.Save();
     }
 
@@ -187,14 +181,8 @@ public class SentryService : ISentryService
 
         SentrySdk.ConfigureScope(scope => 
         {
+            scope.SetTag("Opted", "in");
             scope.SetTag("distribution", AppPaths.DistributionType.ToLowerInvariant());
         });
-
-        if (Settings.Default.ReportedOptEventStatus != 1)
-        {
-            SentrySdk.CaptureMessage("User opted into telemetry", SentryLevel.Info);
-            Settings.Default.ReportedOptEventStatus = 1;
-            Settings.Default.Save();
-        }
     }
 }

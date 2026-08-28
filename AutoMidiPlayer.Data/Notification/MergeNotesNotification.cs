@@ -1,4 +1,4 @@
-﻿using AutoMidiPlayer.Data.Midi;
+using AutoMidiPlayer.Data.Midi;
 
 namespace AutoMidiPlayer.Data.Notification;
 

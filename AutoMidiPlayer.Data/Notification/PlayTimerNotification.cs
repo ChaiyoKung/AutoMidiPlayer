@@ -1,4 +1,4 @@
-﻿namespace AutoMidiPlayer.Data.Notification;
+namespace AutoMidiPlayer.Data.Notification;
 
 public class PlayTimerNotification(bool shouldPlay = true)
 {

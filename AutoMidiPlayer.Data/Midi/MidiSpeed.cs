@@ -1,4 +1,4 @@
-﻿namespace AutoMidiPlayer.Data.Midi;
+namespace AutoMidiPlayer.Data.Midi;
 
 public class MidiSpeed(string speedName, double speed)
 {

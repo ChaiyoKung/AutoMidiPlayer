@@ -1,4 +1,4 @@
-﻿using AutoMidiPlayer.Data.Entities;
+using AutoMidiPlayer.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace AutoMidiPlayer.Data;

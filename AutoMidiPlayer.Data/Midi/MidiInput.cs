@@ -1,4 +1,4 @@
-﻿namespace AutoMidiPlayer.Data.Midi;
+namespace AutoMidiPlayer.Data.Midi;
 
 public class MidiInput(string deviceName)
 {

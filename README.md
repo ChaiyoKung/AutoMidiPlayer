@@ -111,7 +111,7 @@ If you just want to run the app, download the latest [release][latest].
 
 ### Requirements
 * [Git](https://git-scm.com)
-* [.NET 8.0](https://dotnet.microsoft.com/download) SDK or later
+* [.NET 10.0](https://dotnet.microsoft.com/download) SDK or later
 
 ### Build and run
 ```bat
@@ -135,10 +135,10 @@ This project was originally forked from **[sabihoshi/GenshinLyreMidiPlayer][Gens
 # License
 
 * This project’s source code is licensed under the [GNU General Public License v3.0](LICENSE).
-* This project is based on [sabihoshi/GenshinLyreMidiPlayer][GenshinLyreMidiPlayer]. Original attribution and upstream notices are preserved in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+* This project is based on [sabihoshi/GenshinLyreMidiPlayer][GenshinLyreMidiPlayer]. Original attribution and upstream notices are preserved in [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md).
 * "**Auto MIDI Player**" and its logo are trademarks of Jed556. Trademark and branding use are governed by [TRADEMARK.md](TRADEMARK.md).
 * This project is not affiliated with or endorsed by miHoYo, KURO GAMES, XD, thatgamecompany, Roblox Corporation, Hotta Studio, or any other rights holder. Genshin Impact™, Wuthering Waves™, Heartopia™, Sky: Children of the Light™, Roblox™, Neverness to Everness™, and other game titles and properties belong to their respective owners.
-* Third-party libraries and other resources used by this project may be distributed under different licenses and are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+* Third-party libraries and other resources used by this project may be distributed under different licenses and are listed in [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md).
 
 <br/>
 

@@ -130,8 +130,7 @@
 
             <!-- Content -->
             <StackPanel Grid.Column="1"
-                    VerticalAlignment="Center"
-                    MinHeight="95">
+                    VerticalAlignment="Center">
                 <!-- Title -->
                 <Grid>
                     <controls:SkeletonBlock x:Name="SkeletonTitle"
@@ -237,7 +236,21 @@
                         <StackPanel Orientation="Horizontal"
                                 Margin="0,0,14,0"
                                 VerticalAlignment="Center"
-                                    Visibility="{Binding HasDownloads, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"
+                                    Visibility="{Binding HasViews, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"
+                                   ToolTipService.ToolTip="{Binding Views, StringFormat=\{0\} Views}">
+                        <ui:SymbolIcon Symbol="Eye24"
+                                       FontSize="12"
+                                       Opacity="0.55"
+                                       Margin="0,0,4,0"/>
+                        <TextBlock Text="{Binding Views}"
+                                   Opacity="0.7"
+                                   FontSize="12"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal"
+                                Margin="0,0,14,0"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding HasDownloads, Converter={x:Static s:BoolToVisibilityConverter.Instance}}"
                                     ToolTipService.ToolTip="Total Downloads">
                             <ui:SymbolIcon Symbol="ArrowDownload16"
                                     FontSize="12"
@@ -312,9 +325,9 @@
                                     <TextBlock Text="A" FontSize="12" Visibility="Hidden"/>
                                 </controls:SkeletonBlock>
 
-                                <StackPanel x:Name="BpmContent" Orientation="Horizontal" Margin="0,0,14,0" HorizontalAlignment="Left" ToolTipService.ToolTip="BPM" Visibility="{Binding Details.HasBpm, Converter={x:Static s:BoolToVisibilityConverter.Instance}, FallbackValue=Collapsed, TargetNullValue=Collapsed}">
+                                <StackPanel x:Name="BpmContent" Orientation="Horizontal" Margin="0,0,14,0" HorizontalAlignment="Left" ToolTipService.ToolTip="BPM" Visibility="{Binding HasBpm, Converter={x:Static s:BoolToVisibilityConverter.Instance}, FallbackValue=Collapsed, TargetNullValue=Collapsed}">
                                     <ui:SymbolIcon Symbol="Timer24" FontSize="12" Opacity="0.55" Margin="0,0,4,0"/>
-                                    <TextBlock Text="{Binding Details.Bpm}" Opacity="0.7" FontSize="12"/>
+                                    <TextBlock Text="{Binding Bpm}" Opacity="0.7" FontSize="12"/>
                                 </StackPanel>
                             </Grid>
                         </ContentControl>
@@ -362,7 +375,7 @@
                 </Grid>
 
                 <!-- Description (Now persists even when empty) -->
-                <Grid Margin="0,6,0,0">
+                <Grid Margin="0,6,0,0" Visibility="{Binding HasDescription, Converter={x:Static s:BoolToVisibilityConverter.Instance}}">
                     <controls:SkeletonBlock x:Name="SkeletonDesc"
                             Width="240"
                             HorizontalAlignment="Left"
@@ -382,7 +395,7 @@
                 </Grid>
 
                 <!-- Category & Tags -->
-                <Grid Margin="0,8,0,0">
+                <Grid Margin="0,10,0,0" Visibility="{Binding HasCategoryOrTags, Converter={x:Static s:BoolToVisibilityConverter.Instance}}">
                     <WrapPanel x:Name="SkeletonTagsWrap" Visibility="{Binding IsLoading, Converter={x:Static s:BoolToVisibilityConverter.Instance}}">
                         <!-- Skeleton styling identically matching the real chip's padding and font size -->
                         <controls:SkeletonBlock x:Name="SkeletonChip"
@@ -644,3 +657,7 @@
             </ContentControl>
     </Grid>
 </UserControl>
+
+
+
+

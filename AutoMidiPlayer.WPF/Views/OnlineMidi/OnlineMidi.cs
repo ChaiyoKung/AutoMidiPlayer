@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using AutoMidiPlayer.WPF.Helpers;
 using AutoMidiPlayer.WPF.Services.MidiShow;
+using AutoMidiPlayer.WPF.Services.OnlineMidi;
 using AutoMidiPlayer.WPF.ViewModels;
 
 namespace AutoMidiPlayer.WPF.Views;
@@ -213,7 +214,7 @@ public partial class OnlineMidiView : UserControl
         if (ViewModel is not { } vm)
             return;
 
-        if (sender is FrameworkElement { DataContext: MidiShowItem item })
+        if (sender is FrameworkElement { DataContext: OnlineMidiItem item })
             _ = vm.AddToSongsAsync(item);
     }
 
@@ -222,7 +223,7 @@ public partial class OnlineMidiView : UserControl
         if (ViewModel is not { } vm)
             return;
 
-        if (sender is FrameworkElement { DataContext: MidiShowItem item })
+        if (sender is FrameworkElement { DataContext: OnlineMidiItem item })
             _ = vm.PreviewAsync(item);
     }
 
@@ -232,7 +233,7 @@ public partial class OnlineMidiView : UserControl
         if (ViewModel is not { } vm)
             return;
 
-        if (sender is FrameworkElement { DataContext: MidiShowItem item })
+        if (sender is FrameworkElement { DataContext: OnlineMidiItem item })
             _ = vm.ToggleDetailsAsync(item);
     }
     #region Account Popup Animations

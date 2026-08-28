@@ -7,6 +7,8 @@ using System.Text;
 using System.Text.Json;
 using AutoMidiPlayer.Data;
 
+using AutoMidiPlayer.WPF.Services.OnlineMidi;
+
 namespace AutoMidiPlayer.WPF.Services.MidiShow;
 
 /// <summary>
@@ -217,3 +219,4 @@ internal static class MidiShowProtectedStorage
             LocalFree(blob.pbData);
     }
 }
+

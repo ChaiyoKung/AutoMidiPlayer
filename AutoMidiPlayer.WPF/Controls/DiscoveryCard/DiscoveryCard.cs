@@ -24,7 +24,7 @@ public partial class DiscoveryCard : UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (DataContext is Services.MidiShow.MidiShowItem { IsLoading: true })
+        if (DataContext is Services.OnlineMidi.OnlineMidiItem { IsLoading: true })
         {
             RandomizeSkeletonWidths();
         }
@@ -37,11 +37,11 @@ public partial class DiscoveryCard : UserControl
             oldNotify.PropertyChanged -= OnItemPropertyChanged;
         }
 
-        if (DataContext is Services.MidiShow.MidiShowItem item)
+        if (DataContext is Services.OnlineMidi.OnlineMidiItem item)
         {
             item.PropertyChanged += OnItemPropertyChanged;
 
-            bool oldWasLoading = e.OldValue is Services.MidiShow.MidiShowItem oldItem && oldItem.IsLoading;
+            bool oldWasLoading = e.OldValue is Services.OnlineMidi.OnlineMidiItem oldItem && oldItem.IsLoading;
             bool isNewlyLoaded = !item.IsLoading && !string.IsNullOrEmpty(item.Id) && !s_animatedIds.Contains(item.Id) && oldWasLoading;
             if (isNewlyLoaded)
             {
@@ -133,9 +133,9 @@ public partial class DiscoveryCard : UserControl
 
     private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (DataContext is Services.MidiShow.MidiShowItem item)
+        if (DataContext is Services.OnlineMidi.OnlineMidiItem item)
         {
-            if (e.PropertyName == nameof(Services.MidiShow.MidiShowItem.IsLoading))
+            if (e.PropertyName == nameof(Services.OnlineMidi.OnlineMidiItem.IsLoading))
             {
                 if (item.IsLoading)
                 {
@@ -143,7 +143,7 @@ public partial class DiscoveryCard : UserControl
                     RandomizeSkeletonWidths();
                 }
             }
-            else if (e.PropertyName == nameof(Services.MidiShow.MidiShowItem.IsLoadingDetails))
+            else if (e.PropertyName == nameof(Services.OnlineMidi.OnlineMidiItem.IsLoadingDetails))
             {
                 if (!item.IsLoadingDetails && item.Details?.HasBpm == true)
                 {
@@ -520,7 +520,7 @@ public partial class DiscoveryCard : UserControl
 
     private void VisitPage_Click(object sender, RoutedEventArgs e)
     {
-        if (DataContext is Services.MidiShow.MidiShowItem item && !string.IsNullOrEmpty(item.PageUrl))
+        if (DataContext is Services.OnlineMidi.OnlineMidiItem item && !string.IsNullOrEmpty(item.PageUrl))
         {
             try
             {
@@ -536,3 +536,4 @@ public partial class DiscoveryCard : UserControl
 
     #endregion
 }
+

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using AutoMidiPlayer.WPF.Services.OnlineMidi;
+
 namespace AutoMidiPlayer.WPF.Services.MidiShow;
 
 /// <summary>
@@ -17,18 +19,18 @@ public sealed class CacheEntry<T>
 /// <summary>
 /// JSON-serializable wrapper for a page of search/browse results.
 /// </summary>
-public sealed class CachedMidiShowPageResult
+public sealed class CachedOnlineMidiPageResult
 {
-    public List<CachedMidiShowItem> Items { get; set; } = new();
+    public List<CachedOnlineMidiItem> Items { get; set; } = new();
     public string StatusText { get; set; } = string.Empty;
 }
 
 /// <summary>
-/// JSON-serializable mirror of <see cref="MidiShowItem"/> for disk caching.
+/// JSON-serializable mirror of <see cref="OnlineMidiItem"/> for disk caching.
 /// Uses plain auto-properties so System.Text.Json can round-trip them without
 /// pulling in Stylet or WPF dependencies.
 /// </summary>
-public sealed class CachedMidiShowItem
+public sealed class CachedOnlineMidiItem
 {
     public string Id { get; set; } = string.Empty;
     public string PageUrl { get; set; } = string.Empty;
@@ -45,14 +47,19 @@ public sealed class CachedMidiShowItem
     public string Description { get; set; } = "";
     public string Rating { get; set; } = "0.0";
     public string RatingCount { get; set; } = "0";
+    public bool ProviderSupportsTags { get; set; } = true;
     public string? InstrumentCount { get; set; }
     public string? FileSize { get; set; }
     public string? UploadDate { get; set; }
+    public string? Bpm { get; set; }
+    public string Views { get; set; } = "0";
+    public string? Arranger { get; set; }
 
     /// <summary>Converts from the live view model to a cache-safe DTO.</summary>
-    public static CachedMidiShowItem From(MidiShowItem item) => new()
+    public static CachedOnlineMidiItem From(OnlineMidiItem item) => new()
     {
         Id = item.Id,
+        ProviderSupportsTags = item.ProviderSupportsTags,
         PageUrl = item.PageUrl,
         Title = item.Title,
         Uploader = item.Uploader,
@@ -69,13 +76,17 @@ public sealed class CachedMidiShowItem
         RatingCount = item.RatingCount,
         InstrumentCount = item.InstrumentCount,
         FileSize = item.FileSize,
-        UploadDate = item.UploadDate
+        UploadDate = item.UploadDate,
+        Bpm = item.Bpm,
+        Views = item.Views,
+        Arranger = item.Arranger
     };
 
-    /// <summary>Reconstitutes a live <see cref="MidiShowItem"/> from the cached DTO.</summary>
-    public MidiShowItem ToItem() => new()
+    /// <summary>Reconstitutes a live <see cref="OnlineMidiItem"/> from the cached DTO.</summary>
+    public OnlineMidiItem ToItem() => new()
     {
         Id = Id,
+        ProviderSupportsTags = ProviderSupportsTags,
         PageUrl = PageUrl,
         Title = Title,
         Uploader = Uploader,
@@ -92,7 +103,10 @@ public sealed class CachedMidiShowItem
         RatingCount = RatingCount,
         InstrumentCount = InstrumentCount,
         FileSize = FileSize,
-        UploadDate = UploadDate
+        UploadDate = UploadDate,
+        Bpm = Bpm,
+        Views = Views,
+        Arranger = Arranger
     };
 }
 
@@ -193,3 +207,4 @@ public sealed class CachedMidiShowTrack
     public string ProgramId { get; set; } = "";
     public string NotesCount { get; set; } = "";
 }
+

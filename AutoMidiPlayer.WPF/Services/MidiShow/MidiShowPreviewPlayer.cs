@@ -6,6 +6,8 @@ using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
 using Melanchall.DryWetMidi.Multimedia;
 
+using AutoMidiPlayer.WPF.Services.OnlineMidi;
+
 namespace AutoMidiPlayer.WPF.Services.MidiShow;
 
 /// <summary>
@@ -156,3 +158,4 @@ public sealed class MidiShowPreviewPlayer : IDisposable
 
     public void Dispose() => Stop();
 }
+

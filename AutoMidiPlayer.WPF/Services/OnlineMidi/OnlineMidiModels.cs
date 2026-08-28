@@ -3,24 +3,46 @@ using System.Collections.Generic;
 using System.Linq;
 using Stylet;
 
-namespace AutoMidiPlayer.WPF.Services.MidiShow;
+namespace AutoMidiPlayer.WPF.Services.OnlineMidi;
 
-public record MidiShowPageResult(IReadOnlyList<MidiShowItem> Items, string StatusText);
+public record OnlineMidiPageResult(IReadOnlyList<OnlineMidiItem> Items, string StatusText);
+
+public class FilterOption
+{
+    public string Key { get; }
+    public string Name { get; }
+    public string Icon { get; }
+
+    public FilterOption(string key, string name, string icon = "")
+    {
+        Key = key;
+        Name = name;
+        Icon = icon;
+    }
+}
 
 /// <summary>
 /// A single MIDI entry parsed from a MidiShow list or search results page.
 /// </summary>
-public sealed class MidiShowItem : PropertyChangedBase
+public sealed class OnlineMidiItem : PropertyChangedBase
 {
     /// <summary>Numeric MidiShow id (from the <c>data-key</c> attribute).</summary>
     public string Id { get; init; } = string.Empty;
+
+    public bool ProviderSupportsTags { get; init; } = true;
 
     private bool _isLoading;
     /// <summary>Indicates if this item is a loading skeleton.</summary>
     public bool IsLoading
     {
         get => _isLoading;
-        set => SetAndNotify(ref _isLoading, value);
+        set
+        {
+            if (SetAndNotify(ref _isLoading, value))
+            {
+                NotifyOfPropertyChange(nameof(HasCategoryOrTags));
+            }
+        }
     }
 
     /// <summary>Absolute URL of the MIDI detail page (used to download).</summary>
@@ -65,13 +87,33 @@ public sealed class MidiShowItem : PropertyChangedBase
     /// <summary>Number of ratings ("0" when none).</summary>
     public string RatingCount { get; init; } = "0";
 
+    private string? _bpm;
+    public string? Bpm
+    {
+        get => _bpm;
+        set
+        {
+            if (SetAndNotify(ref _bpm, value))
+            {
+                NotifyOfPropertyChange(nameof(HasBpm));
+                NotifyOfPropertyChange(nameof(IsBpmSectionVisible));
+            }
+        }
+    }
+    public string Views { get; init; } = "0";
+    public string? Arranger { get; init; }
+
     public bool HasStandard => !string.IsNullOrEmpty(Standard);
     public bool HasThumbnail => !string.IsNullOrEmpty(ThumbnailUrl);
     public bool HasDuration => !string.IsNullOrEmpty(Duration);
+    public bool HasBpm => Bpm is not (null or "" or "0");
     public bool HasDownloads => Downloads is not (null or "" or "0");
+    public bool HasViews => Views is not (null or "" or "0");
+    
     public bool HasTrackCount => TrackCount is not (null or "" or "0");
     public bool HasCategory => !string.IsNullOrEmpty(Category);
     public bool HasTags => !string.IsNullOrEmpty(Tags);
+    public bool HasCategoryOrTags => ProviderSupportsTags && (HasCategory || HasTags || IsLoading);
     public bool HasDescription => !string.IsNullOrEmpty(Description);
     public bool HasRating => RatingCount is not (null or "" or "0");
     
@@ -143,11 +185,14 @@ public sealed class MidiShowItem : PropertyChangedBase
         set
         {
             if (SetAndNotify(ref _details, value))
+            {
+                if (_details?.HasBpm == true) Bpm = _details.Bpm;
                 NotifyOfPropertyChange(nameof(IsBpmSectionVisible));
+            }
         }
     }
 
-    public bool IsBpmSectionVisible => IsLoadingDetails || Details?.HasBpm == true;
+    public bool IsBpmSectionVisible => IsLoadingDetails || Details?.HasBpm == true || HasBpm;
 }
 
 /// <summary>

@@ -8,6 +8,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using AutoMidiPlayer.Data;
 
+using AutoMidiPlayer.WPF.Services.OnlineMidi;
+
 namespace AutoMidiPlayer.WPF.Services.MidiShow;
 
 /// <summary>
@@ -47,7 +49,7 @@ public static class MidiShowCache
 
     #region Page Listings
 
-    public static async Task SaveBrowsePageAsync(int page, string sort, string category, MidiShowPageResult result)
+    public static async Task SaveBrowsePageAsync(int page, string sort, string category, OnlineMidiPageResult result)
     {
         try
         {
@@ -57,13 +59,13 @@ public static class MidiShowCache
         catch { }
     }
 
-    public static MidiShowPageResult? TryLoadBrowsePage(int page, string sort, string category)
+    public static OnlineMidiPageResult? TryLoadBrowsePage(int page, string sort, string category)
     {
         var fileName = $"browse_p{page}_s{sort}_c{category}.json".Replace(" ", "_");
         return TryLoadPageInternal(fileName);
     }
 
-    public static async Task SaveSearchPageAsync(string query, int page, string sort, MidiShowPageResult result)
+    public static async Task SaveSearchPageAsync(string query, int page, string sort, OnlineMidiPageResult result)
     {
         try
         {
@@ -75,22 +77,22 @@ public static class MidiShowCache
         catch { }
     }
 
-    public static MidiShowPageResult? TryLoadSearchPage(string query, int page, string sort)
+    public static OnlineMidiPageResult? TryLoadSearchPage(string query, int page, string sort)
     {
         var queryHash = HashUrl(query.ToLowerInvariant());
         var fileName = $"search_{queryHash}_p{page}_s{sort}.json";
         return TryLoadPageInternal(fileName);
     }
 
-    private static async Task SavePageInternalAsync(string fileName, MidiShowPageResult result)
+    private static async Task SavePageInternalAsync(string fileName, OnlineMidiPageResult result)
     {
         AppPaths.EnsureDiscoverCacheDirectories();
         var path = Path.Combine(AppPaths.DiscoverCacheDirectory, fileName);
-        var entry = new CacheEntry<CachedMidiShowPageResult>
+        var entry = new CacheEntry<CachedOnlineMidiPageResult>
         {
-            Data = new CachedMidiShowPageResult
+            Data = new CachedOnlineMidiPageResult
             {
-                Items = result.Items.Select(CachedMidiShowItem.From).ToList(),
+                Items = result.Items.Select(CachedOnlineMidiItem.From).ToList(),
                 StatusText = result.StatusText
             },
             CachedAtUtc = DateTime.UtcNow
@@ -99,7 +101,7 @@ public static class MidiShowCache
         await File.WriteAllTextAsync(path, json);
     }
 
-    private static MidiShowPageResult? TryLoadPageInternal(string fileName)
+    private static OnlineMidiPageResult? TryLoadPageInternal(string fileName)
     {
         try
         {
@@ -112,7 +114,7 @@ public static class MidiShowCache
             // Try to deserialize as the new format first.
             try
             {
-                var entry = JsonSerializer.Deserialize<CacheEntry<CachedMidiShowPageResult>>(json, JsonOptions);
+                var entry = JsonSerializer.Deserialize<CacheEntry<CachedOnlineMidiPageResult>>(json, JsonOptions);
                 if (entry?.Data != null)
                 {
                     if (DateTime.UtcNow - entry.CachedAtUtc > PageTtl)
@@ -120,13 +122,13 @@ public static class MidiShowCache
 
                     TouchFile(path);
                     var items = entry.Data.Items.ConvertAll(d => d.ToItem());
-                    return new MidiShowPageResult(items, entry.Data.StatusText ?? "");
+                    return new OnlineMidiPageResult(items, entry.Data.StatusText ?? "");
                 }
             }
             catch
             {
                 // Fallback for old cache format
-                var oldEntry = JsonSerializer.Deserialize<CacheEntry<List<CachedMidiShowItem>>>(json, JsonOptions);
+                var oldEntry = JsonSerializer.Deserialize<CacheEntry<List<CachedOnlineMidiItem>>>(json, JsonOptions);
                 if (oldEntry?.Data != null)
                 {
                     if (DateTime.UtcNow - oldEntry.CachedAtUtc > PageTtl)
@@ -134,7 +136,7 @@ public static class MidiShowCache
 
                     TouchFile(path);
                     var items = oldEntry.Data.ConvertAll(d => d.ToItem());
-                    return new MidiShowPageResult(items, "");
+                    return new OnlineMidiPageResult(items, "");
                 }
             }
 
@@ -150,15 +152,15 @@ public static class MidiShowCache
 
     #region Summary
 
-    /// <summary>Persists a single <see cref="MidiShowItem"/> summary to disk.</summary>
-    public static async Task SaveSummaryAsync(MidiShowItem item)
+    /// <summary>Persists a single <see cref="OnlineMidiItem"/> summary to disk.</summary>
+    public static async Task SaveSummaryAsync(OnlineMidiItem item)
     {
         try
         {
             var dir = EnsureMidiDir(item.Id);
-            var entry = new CacheEntry<CachedMidiShowItem>
+            var entry = new CacheEntry<CachedOnlineMidiItem>
             {
-                Data = CachedMidiShowItem.From(item),
+                Data = CachedOnlineMidiItem.From(item),
                 CachedAtUtc = DateTime.UtcNow
             };
             var json = JsonSerializer.Serialize(entry, JsonOptions);
@@ -171,7 +173,7 @@ public static class MidiShowCache
     }
 
     /// <summary>Persists a batch of listing results to disk (fire-and-forget).</summary>
-    public static async Task SaveSummariesAsync(IEnumerable<MidiShowItem> items)
+    public static async Task SaveSummariesAsync(IEnumerable<OnlineMidiItem> items)
     {
         foreach (var item in items)
         {
@@ -184,7 +186,7 @@ public static class MidiShowCache
     /// Loads a cached summary for the given MIDI id. Returns null when the file doesn't
     /// exist or has expired.
     /// </summary>
-    public static MidiShowItem? TryLoadSummary(string id)
+    public static OnlineMidiItem? TryLoadSummary(string id)
     {
         try
         {
@@ -193,7 +195,7 @@ public static class MidiShowCache
                 return null;
 
             var json = File.ReadAllText(path);
-            var entry = JsonSerializer.Deserialize<CacheEntry<CachedMidiShowItem>>(json, JsonOptions);
+            var entry = JsonSerializer.Deserialize<CacheEntry<CachedOnlineMidiItem>>(json, JsonOptions);
             if (entry?.Data is null || DateTime.UtcNow - entry.CachedAtUtc > MetadataTtl)
                 return null;
 
@@ -537,3 +539,4 @@ public static class MidiShowCache
 
     #endregion
 }
+

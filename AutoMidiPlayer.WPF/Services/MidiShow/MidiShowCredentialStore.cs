@@ -3,6 +3,8 @@ using System.IO;
 using System.Text.Json;
 using AutoMidiPlayer.Data;
 
+using AutoMidiPlayer.WPF.Services.OnlineMidi;
+
 namespace AutoMidiPlayer.WPF.Services.MidiShow;
 
 /// <summary>
@@ -68,3 +70,4 @@ public static class MidiShowCredentialStore
         }
     }
 }
+

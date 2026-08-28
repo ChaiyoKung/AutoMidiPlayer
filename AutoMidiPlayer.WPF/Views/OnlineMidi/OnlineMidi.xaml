@@ -8,7 +8,7 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:s="https://github.com/canton7/Stylet"
     xmlns:viewModels="clr-namespace:AutoMidiPlayer.WPF.ViewModels"
-    xmlns:midishow="clr-namespace:AutoMidiPlayer.WPF.Services.MidiShow"
+    xmlns:midishow="clr-namespace:AutoMidiPlayer.WPF.Services.MidiShow" xmlns:onlinemidi="clr-namespace:AutoMidiPlayer.WPF.Services.OnlineMidi"
     xmlns:converters="clr-namespace:AutoMidiPlayer.WPF.Converters"
     xmlns:controls="clr-namespace:AutoMidiPlayer.WPF.Controls"
     xmlns:previewPlayer="clr-namespace:AutoMidiPlayer.WPF.Controls.MidiPreviewPlayer"
@@ -85,8 +85,28 @@
                         Orientation="Horizontal"
                         Margin="0,10,0,0">
 
+                        <button:StandardDropdown ToolTip="Select MIDI Provider"
+                                     ItemsSource="{Binding Providers}"
+                                     SelectedItem="{Binding CurrentProvider, Mode=TwoWay}"
+                                     Margin="0,0,8,0">
+                <button:StandardDropdown.SelectedItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Globe24" FontSize="16" Margin="0,0,7,0"/>
+                            <TextBlock VerticalAlignment="Center" Text="{Binding DisplayName}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </button:StandardDropdown.SelectedItemTemplate>
+                <button:StandardDropdown.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock VerticalAlignment="Center" Text="{Binding DisplayName}" Margin="4,0"/>
+                    </DataTemplate>
+                </button:StandardDropdown.ItemTemplate>
+            </button:StandardDropdown>
+
             <button:StandardDropdown ToolTip="Filter by category"
-                                     ItemsSource="{x:Static viewModels:OnlineMidiViewModel.CategoryOptions}"
+                                     Visibility="{Binding HasCategories, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                     ItemsSource="{Binding CategoryOptions}"
                                      SelectedItem="{Binding SelectedCategoryOption, Mode=TwoWay}">
                 <button:StandardDropdown.SelectedItemTemplate>
                     <DataTemplate>
@@ -98,14 +118,17 @@
                 </button:StandardDropdown.SelectedItemTemplate>
                 <button:StandardDropdown.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock VerticalAlignment="Center" Text="{Binding Name}" Margin="4,0"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center" Text="{Binding Name}"/>
+                        </StackPanel>
                     </DataTemplate>
                 </button:StandardDropdown.ItemTemplate>
             </button:StandardDropdown>
 
             <button:StandardDropdown Margin="8,0,0,0"
                                      ToolTip="Sort results"
-                                     ItemsSource="{x:Static viewModels:OnlineMidiViewModel.SortOptions}"
+                                     Visibility="{Binding HasSortOptions, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                     ItemsSource="{Binding SortOptions}"
                                      SelectedItem="{Binding SelectedSortOption, Mode=TwoWay}">
                 <button:StandardDropdown.SelectedItemTemplate>
                     <DataTemplate>
@@ -137,7 +160,7 @@
             <!-- Account: a toolbar button that opens an account-manager popup. The pool can hold
                  several MidiShow accounts (password- or cookie-based); downloads rotate across
                  them and fail over when one is limited. -->
-            <Grid Grid.Row="0" Grid.Column="2" x:Name="AccountAnchor" Margin="8,0,0,0">
+            <Grid Grid.Row="0" Grid.Column="2" x:Name="AccountAnchor" Margin="8,0,0,0" Visibility="{Binding ShowAccounts, Converter={x:Static s:BoolToVisibilityConverter.Instance}}">
                 <controls:Button Variant="Filled" ColorMode="Accent"
                                  Icon="PersonCircle24"
                                  Content="Sign in"
@@ -304,7 +327,7 @@
                     </Style>
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type midishow:MidiShowItem}">
+                    <DataTemplate DataType="{x:Type onlinemidi:OnlineMidiItem}">
                         <controls:DiscoveryCard CardClick="Card_Click" PreviewClick="Preview_Click" AddToSongsClick="AddToSongs_Click"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -374,3 +397,6 @@
 
     </Grid>
 </UserControl>
+
+
+

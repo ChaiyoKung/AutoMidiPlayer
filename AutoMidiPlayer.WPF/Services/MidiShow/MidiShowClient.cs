@@ -10,6 +10,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMidiPlayer.Data;
 
+using AutoMidiPlayer.WPF.Services.OnlineMidi;
+
 namespace AutoMidiPlayer.WPF.Services.MidiShow;
 
 /// <summary>
@@ -247,7 +249,7 @@ public sealed class MidiShowClient : IDisposable
     /// Browses the public MIDI listing. <paramref name="sortByMarks"/> sorts by rating
     /// instead of newest.
     /// </summary>
-    public async Task<MidiShowPageResult> BrowseAsync(int page = 1, string sort = "", string category = "", CancellationToken ct = default)
+    public async Task<OnlineMidiPageResult> BrowseAsync(int page = 1, string sort = "", string category = "", CancellationToken ct = default)
     {
         var url = string.IsNullOrEmpty(category)
             ? $"{Base}/en/midi?page={Math.Max(1, page)}"
@@ -262,7 +264,7 @@ public sealed class MidiShowClient : IDisposable
     /// <summary>
     /// Searches MidiShow by keyword (track name, uploader, etc.).
     /// </summary>
-    public async Task<MidiShowPageResult> SearchAsync(string query, int page = 1, string sort = "", CancellationToken ct = default)
+    public async Task<OnlineMidiPageResult> SearchAsync(string query, int page = 1, string sort = "", CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(query))
             return await BrowseAsync(page, sort, "", ct);
@@ -279,7 +281,7 @@ public sealed class MidiShowClient : IDisposable
     /// Fetches and parses the full detail page for a MIDI (duration, BPM, tracks, notes,
     /// instruments, rating, description). Does not require authentication.
     /// </summary>
-    public async Task<MidiShowDetails> GetDetailsAsync(MidiShowItem item, CancellationToken ct = default)
+    public async Task<MidiShowDetails> GetDetailsAsync(OnlineMidiItem item, CancellationToken ct = default)
     {
         string html;
         try
@@ -682,9 +684,9 @@ public sealed class MidiShowClient : IDisposable
         return raw.Trim('"');
     }
 
-    private static MidiShowPageResult ParseItems(string html)
+    private static OnlineMidiPageResult ParseItems(string html)
     {
-        var items = new List<MidiShowItem>();
+        var items = new List<OnlineMidiItem>();
         var seen = new HashSet<string>();
 
         var statusMatch = Regex.Match(html, @"Showing\s+(?<range>[\d,-]+)\s+of\s+(?<total>[\d,]+)", RegexOptions.IgnoreCase);
@@ -764,7 +766,7 @@ public sealed class MidiShowClient : IDisposable
 
             var uploadDate = Regex.Match(body, @"Uploaded on\s+(?<v>[A-Za-z]+\s+\d{1,2},\s+\d{4})", RegexOptions.IgnoreCase).Groups["v"].Value;
 
-            items.Add(new MidiShowItem
+            items.Add(new OnlineMidiItem
             {
                 Id = id,
                 PageUrl = href,
@@ -787,7 +789,7 @@ public sealed class MidiShowClient : IDisposable
             });
         }
 
-        return new MidiShowPageResult(items, statusText);
+        return new OnlineMidiPageResult(items, statusText);
     }
 
     /// <summary>Reads the value after an icon for a <c>title="Label"</c> stat cell.</summary>
@@ -811,7 +813,7 @@ public sealed class MidiShowClient : IDisposable
         return string.IsNullOrEmpty(v) ? null : v;
     }
 
-    private static MidiShowDetails ParseDetails(string html, MidiShowItem item)
+    private static MidiShowDetails ParseDetails(string html, OnlineMidiItem item)
     {
         var text = WebUtility.HtmlDecode(Regex.Replace(Regex.Replace(html, "<[^>]+>", " "), "\\s+", " "));
 
@@ -1037,3 +1039,4 @@ public sealed class MidiShowClient : IDisposable
         _gate.Dispose();
     }
 }
+

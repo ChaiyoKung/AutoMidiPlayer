@@ -1084,5 +1084,17 @@ namespace AutoMidiPlayer.Data.Properties {
                 return ((string)(this["SqliteConnection"]));
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1900-01-01")]
+        public global::System.DateTime LastOptedOutLogDate {
+            get {
+                return ((global::System.DateTime)(this["LastOptedOutLogDate"]));
+            }
+            set {
+                this["LastOptedOutLogDate"] = value;
+            }
+        }
     }
 }

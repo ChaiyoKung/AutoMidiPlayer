@@ -10,6 +10,7 @@ using AutoMidiPlayer.Data;
 using AutoMidiPlayer.Data.Midi.Extensions;
 using AutoMidiPlayer.WPF.Controls.Snackbar;
 using AutoMidiPlayer.WPF.Services.MidiShow;
+using AutoMidiPlayer.WPF.Services.OnlineMidi;
 using AutoMidiPlayer.WPF.Controls.MidiPreviewPlayer;
 using JetBrains.Annotations;
 using Melanchall.DryWetMidi.Core;
@@ -40,11 +41,71 @@ public sealed class OnlineMidiViewModel : Screen
 
     public MidiPreviewPlayerViewModel PreviewPlayer { get; } = new();
 
+    public BindableCollection<IOnlineMidiProvider> Providers { get; } = new();
+
+    private IOnlineMidiProvider _currentProvider = null!;
+    public IOnlineMidiProvider CurrentProvider
+    {
+        get => _currentProvider;
+        set
+        {
+            if (SetAndNotify(ref _currentProvider, value) && _initialized)
+            {
+                NotifyOfPropertyChange(nameof(ShowAccounts));
+                NotifyOfPropertyChange(nameof(CategoryOptions));
+                NotifyOfPropertyChange(nameof(SortOptions));
+                NotifyOfPropertyChange(nameof(HasCategories));
+                NotifyOfPropertyChange(nameof(HasSortOptions));
+                
+                ApplyDefaultFilters(skipLoad: true);
+                
+                Results.Clear();
+                CurrentPage = 1;
+                Reload();
+            }
+        }
+    }
+
+    private void ApplyDefaultFilters(bool skipLoad = false)
+    {
+        _selectedCategoryOption = CategoryOptions.Count > 0 ? CategoryOptions[0] : null;
+        _selectedSortOption = SortOptions.Count > 0 ? SortOptions[0] : null;
+
+        NotifyOfPropertyChange(nameof(SelectedCategoryOption));
+        NotifyOfPropertyChange(nameof(SelectedSortOption));
+
+        SelectedCategorySlug = _selectedCategoryOption?.Key ?? "";
+        SelectedCategoryName = string.IsNullOrEmpty(_selectedCategoryOption?.Name) ? "All categories" : _selectedCategoryOption.Name;
+        
+        SortKey = _selectedSortOption?.Key ?? "";
+
+        SearchQuery = "";
+        
+        NotifyOfPropertyChange(nameof(SearchQuery));
+        NotifyOfPropertyChange(nameof(SelectedCategoryName));
+        NotifyOfPropertyChange(nameof(SortKey));
+        NotifyOfPropertyChange(nameof(SortLabel));
+
+        if (!skipLoad && _initialized)
+        {
+            CurrentPage = 1;
+            _ = LoadAsync();
+        }
+    }
+
+    public bool ShowAccounts => CurrentProvider?.RequiresAccount == true;
+
     public OnlineMidiViewModel(StyletIoC.IContainer ioc, MainWindowViewModel main)
     {
         _ioc = ioc;
         _main = main;
         _pool.Changed += OnPoolChanged;
+
+        Providers.Add(new MidiShowProvider(_pool));
+        Providers.Add(new NanoMidiProvider());
+        _currentProvider = Providers[0];
+
+        ApplyDefaultFilters(skipLoad: true);
 
         // Preview and the main player both render through the same Windows synth, so they
         // must not play at once. When the main player starts, stop the preview cleanly
@@ -90,7 +151,7 @@ public sealed class OnlineMidiViewModel : Screen
 
     #region Bindable state
 
-    public BindableCollection<MidiShowItem> Results { get; } = new();
+    public BindableCollection<OnlineMidiItem> Results { get; } = new();
 
     /// <summary>The configured MidiShow accounts, with live health status, for the account flyout.</summary>
     public BindableCollection<MidiShowAccountRow> Accounts { get; } = new();
@@ -476,7 +537,7 @@ public sealed class OnlineMidiViewModel : Screen
             SelectedCategorySlug = "";
             SelectedCategoryName = "All categories";
             NotifyOfPropertyChange(nameof(SelectedCategoryName));
-            _selectedCategoryOption = CategoryOptions[0];
+            _selectedCategoryOption = CategoryOptions.Count > 0 ? CategoryOptions[0] : null;
             NotifyOfPropertyChange(nameof(SelectedCategoryOption));
         }
 
@@ -525,72 +586,41 @@ public sealed class OnlineMidiViewModel : Screen
         await LoadAsync();
     }
 
-    public class FilterOption
-    {
-        public string Key { get; }
-        public string Name { get; }
-        public string Icon { get; }
+    public IReadOnlyList<FilterOption> CategoryOptions => CurrentProvider.CategoryOptions;
+    
+    public IReadOnlyList<FilterOption> SortOptions => CurrentProvider.SortOptions;
 
-        public FilterOption(string key, string name, string icon = "")
-        {
-            Key = key;
-            Name = name;
-            Icon = icon;
-        }
-    }
+    public bool HasCategories => CategoryOptions != null && CategoryOptions.Count > 1;
+    public bool HasSortOptions => SortOptions != null && SortOptions.Count > 1;
 
-    public static IReadOnlyList<FilterOption> CategoryOptions { get; } = new List<FilterOption>
-    {
-        new("", "All categories"),
-        new("pop-music", "Pop Music"),
-        new("game-music", "Anime / Game music"),
-        new("movie_tv_soundtrack", "Film Score"),
-        new("classical-music", "Classical Music"),
-        new("electronic-music", "Electronic Music"),
-        new("rock-and-roll", "Rock"),
-        new("jazz-and-blues", "Jazz"),
-        new("country-music", "Country Music"),
-        new("rhythm-and-blues", "Rhythm & Blues"),
-        new("hip-hop-and-rap", "Hip / Rap Music"),
-        new("latin-music", "Latin"),
-        new("national-music", "Folk Music"),
-        new("folk-music", "Ballad"),
-        new("easy-listening-music", "Easy Listening"),
-        new("childrens-music", "Children's Music"),
-        new("religious-music", "Religious Music"),
-        new("other-music", "Other Music")
-    };
-
-    public static IReadOnlyList<FilterOption> SortOptions { get; } = new List<FilterOption>
-    {
-        new("", "Newest", "ArrowTrending12"),
-        new("time_asc", "Oldest", "Clock12"),
-        new("popularity", "Most popular", "Fire24"),
-        new("marks", "Highest rated", "StarEmphasis24")
-    };
-
-    private FilterOption _selectedCategoryOption = CategoryOptions[0];
-    public FilterOption SelectedCategoryOption
+    private FilterOption? _selectedCategoryOption;
+    public FilterOption? SelectedCategoryOption
     {
         get => _selectedCategoryOption;
         set
         {
             if (SetAndNotify(ref _selectedCategoryOption, value))
             {
-                _ = SetCategory(value.Key, value.Name);
+                if (value != null)
+                {
+                    _ = SetCategory(value.Key, value.Name);
+                }
             }
         }
     }
 
-    private FilterOption _selectedSortOption = SortOptions[0];
-    public FilterOption SelectedSortOption
+    private FilterOption? _selectedSortOption;
+    public FilterOption? SelectedSortOption
     {
         get => _selectedSortOption;
         set
         {
             if (SetAndNotify(ref _selectedSortOption, value))
             {
-                _ = SetSort(value.Key);
+                if (value != null)
+                {
+                    _ = SetSort(value.Key);
+                }
             }
         }
     }
@@ -652,24 +682,6 @@ public sealed class OnlineMidiViewModel : Screen
 
         var isSearch = !string.IsNullOrWhiteSpace(SearchQuery);
         
-        // Fast-path: Check cache first to avoid skeleton flashes on already cached pages
-        if (!forceRefresh)
-        {
-            var cachedResult = isSearch
-                ? _pool.TryGetCachedSearchPage(SearchQuery, CurrentPage, SortKey)
-                : _pool.TryGetCachedBrowsePage(CurrentPage, SortKey, SelectedCategorySlug);
-
-            if (cachedResult != null)
-            {
-                // Cached data available! Skip skeletons entirely and snap to items instantly.
-                UpdateResultsCollection(cachedResult.Items, isSearch);
-                if (!string.IsNullOrEmpty(cachedResult.StatusText)) StatusMessage = cachedResult.StatusText;
-                _loadCts = null;
-                SetBusy(false);
-                return;
-            }
-        }
-
         SetBusy(true);
         StatusMessage = isSearch
             ? $"Searching \"{SearchQuery.Trim()}\"..."
@@ -685,9 +697,10 @@ public sealed class OnlineMidiViewModel : Screen
             }
             else
             {
-                Results.Add(new MidiShowItem 
+                Results.Add(new OnlineMidiItem 
                 { 
                     Id = $"skeleton_{i}", 
+                    ProviderSupportsTags = CurrentProvider.SupportsTags,
                     IsLoading = true,
                     Description = "...",
                     Category = "...",
@@ -699,8 +712,8 @@ public sealed class OnlineMidiViewModel : Screen
         try
         {
             var result = isSearch
-                ? await _pool.SearchAsync(SearchQuery, CurrentPage, SortKey, forceRefresh, cts.Token)
-                : await _pool.BrowseAsync(CurrentPage, SortKey, SelectedCategorySlug, forceRefresh, cts.Token);
+                ? await CurrentProvider.SearchAsync(SearchQuery, CurrentPage, SortKey, forceRefresh, cts.Token)
+                : await CurrentProvider.BrowseAsync(CurrentPage, SortKey, SelectedCategorySlug, forceRefresh, cts.Token);
 
             if (cts.IsCancellationRequested)
                 return;
@@ -732,7 +745,7 @@ public sealed class OnlineMidiViewModel : Screen
         }
     }
 
-    private void UpdateResultsCollection(IReadOnlyList<MidiShowItem> items, bool isSearch, string statusText = "")
+    private void UpdateResultsCollection(IReadOnlyList<OnlineMidiItem> items, bool isSearch, string statusText = "")
     {
         if (PreviewPlayer.IsPreviewActive && _currentPreviewItem != null)
         {
@@ -796,7 +809,7 @@ public sealed class OnlineMidiViewModel : Screen
 
     #region Details
 
-    public async Task ToggleDetailsAsync(MidiShowItem item)
+    public async Task ToggleDetailsAsync(OnlineMidiItem item)
     {
         if (item is null)
             return;
@@ -825,6 +838,7 @@ public sealed class OnlineMidiViewModel : Screen
             {
                 var details = await _pool.GetDetailsAsync(item);
                 item.Details = details;
+                if (item.Bpm == null && details.Bpm != null) item.Bpm = details.Bpm;
             }
             catch (Exception ex)
             {
@@ -846,16 +860,12 @@ public sealed class OnlineMidiViewModel : Screen
     /// <summary>
     /// Fetches the selected MIDI from MidiShow and adds it straight into the Songs library.
     /// </summary>
-    public async Task AddToSongsAsync(MidiShowItem item)
+    public async Task AddToSongsAsync(OnlineMidiItem item)
     {
         if (item is null)
             return;
 
-        if (!_pool.HasAccounts)
-        {
-            SnackbarService.Warning("Account required", "Add a MidiShow account first.");
-            return;
-        }
+        if (CurrentProvider.RequiresAccount && !_pool.HasAccounts) { SnackbarService.Warning("Account required", "Add an account first."); return; }
 
         // Preview and download share the same network/decode pipeline; only one at a time.
         if (IsDownloading)
@@ -872,8 +882,8 @@ public sealed class OnlineMidiViewModel : Screen
         {
             // The pool rotates across accounts and fails over internally, so by the time an
             // exception reaches here every usable account has already been tried.
-            var result = await _pool.DownloadAsync(item.PageUrl);
-            var path = await SaveMidiAsync(result, item);
+            var result = await CurrentProvider.DownloadMidiAsync(item);
+            var path = await SaveMidiAsync(result, item, CurrentProvider.DisplayName);
 
             await _main.FileService.AddFiles(new[] { path });
 
@@ -913,14 +923,14 @@ public sealed class OnlineMidiViewModel : Screen
         }
     }
 
-    private MidiShowItem? _currentPreviewItem;
+    private OnlineMidiItem? _currentPreviewItem;
 
     /// <summary>
     /// Downloads (only when clicked) and plays the MIDI on a SEPARATE preview player —
     /// it does not touch the main player, the queue, the opened file or Listen Mode, and
     /// nothing is added to the Songs library. A standalone "listen before you download".
     /// </summary>
-    public async Task PreviewAsync(MidiShowItem item)
+    public async Task PreviewAsync(OnlineMidiItem item)
     {
         if (item is null)
             return;
@@ -932,11 +942,7 @@ public sealed class OnlineMidiViewModel : Screen
             return;
         }
 
-        if (!_pool.HasAccounts)
-        {
-            SnackbarService.Warning("Account required", "Add a MidiShow account to preview.");
-            return;
-        }
+        if (CurrentProvider.RequiresAccount && !_pool.HasAccounts) { SnackbarService.Warning("Account required", "Add an account to preview."); return; }
 
         // Preview and download share the same network/decode pipeline; only one at a time.
         if (IsDownloading)
@@ -956,7 +962,7 @@ public sealed class OnlineMidiViewModel : Screen
 
         try
         {
-            var result = await _pool.DownloadAsync(item.PageUrl);
+            var data = await CurrentProvider.DownloadPreviewMidiAsync(item);
 
             // The synth allows only one open handle, so reuse the main player's device.
             var synth = _main.PlaybackEngine.PreviewSynthDevice;
@@ -973,7 +979,7 @@ public sealed class OnlineMidiViewModel : Screen
                 pausedMain = true;
             }
 
-            await Task.Run(() => PreviewPlayer.Play(result.Data, result.Title, item.Uploader, item.ThumbnailUrl, synth));
+            await Task.Run(() => PreviewPlayer.Play(data, item.Title, item.Uploader, item.ThumbnailUrl, synth));
 
             if (_currentPreviewItem is not null && _currentPreviewItem != item)
                 _currentPreviewItem.IsPreviewPlaying = false;
@@ -1036,12 +1042,12 @@ public sealed class OnlineMidiViewModel : Screen
         return t.TotalHours >= 1 ? t.ToString(@"h\:mm\:ss") : t.ToString(@"m\:ss");
     }
 
-    private static async Task<string> SaveMidiAsync(MidiShowDownloadResult result, MidiShowItem item)
+    private static async Task<string> SaveMidiAsync(OnlineMidiDownloadResult result, OnlineMidiItem item, string providerName)
     {
-        var directory = AppPaths.EnsureOnlineMidiDirectory();
+        var directory = AppPaths.EnsureOnlineMidiDirectory(providerName);
         var baseName = SanitizeFileName(string.IsNullOrWhiteSpace(result.Title) ? item.Title : result.Title);
         if (string.IsNullOrWhiteSpace(baseName))
-            baseName = $"midishow-{item.Id}";
+            baseName = $"{providerName.ToLowerInvariant()}-{item.Id}";
 
         var path = Path.Combine(directory, baseName + ".mid");
 
@@ -1190,3 +1196,14 @@ public sealed class MidiShowAccountRow
         return brush;
     }
 }
+
+
+
+
+
+
+
+
+
+
+

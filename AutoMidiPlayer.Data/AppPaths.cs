@@ -117,6 +117,9 @@ public static class AppPaths
     public static readonly string DiscoverCacheDirectory =
         Path.Combine(AppDataDirectory, "cache", "discover", "MidiShow");
 
+    public static readonly string NanoMidiCacheDirectory =
+        Path.Combine(AppDataDirectory, "cache", "discover", "NanoMidi");
+
     /// <summary>
     /// Directory for cached per-MIDI data (summary.json, details.json, file.mid) keyed by MIDI id.
     /// </summary>
@@ -157,10 +160,18 @@ public static class AppPaths
     /// <summary>
     /// Ensures the online MIDI download directory exists and returns its path.
     /// </summary>
-    public static string EnsureOnlineMidiDirectory()
+    public static string EnsureOnlineMidiDirectory(string? providerName = null)
     {
         if (!Directory.Exists(OnlineMidiDirectory))
             Directory.CreateDirectory(OnlineMidiDirectory);
+            
+        if (!string.IsNullOrWhiteSpace(providerName))
+        {
+            var providerDir = Path.Combine(OnlineMidiDirectory, providerName);
+            if (!Directory.Exists(providerDir))
+                Directory.CreateDirectory(providerDir);
+            return providerDir;
+        }
 
         return OnlineMidiDirectory;
     }

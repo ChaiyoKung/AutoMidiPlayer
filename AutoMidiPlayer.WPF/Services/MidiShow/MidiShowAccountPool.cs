@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using AutoMidiPlayer.Data;
 using AutoMidiPlayer.WPF.Controls.Snackbar;
 
+using AutoMidiPlayer.WPF.Services.OnlineMidi;
+
 namespace AutoMidiPlayer.WPF.Services.MidiShow;
 
 
@@ -243,13 +245,13 @@ public sealed class MidiShowAccountPool : IDisposable
 
     #region Browse / search / details (anonymous session)
 
-    public MidiShowPageResult? TryGetCachedBrowsePage(int page, string sort, string category)
+    public OnlineMidiPageResult? TryGetCachedBrowsePage(int page, string sort, string category)
         => MidiShowCache.TryLoadBrowsePage(page, sort, category);
 
-    public MidiShowPageResult? TryGetCachedSearchPage(string query, int page, string sort)
+    public OnlineMidiPageResult? TryGetCachedSearchPage(string query, int page, string sort)
         => MidiShowCache.TryLoadSearchPage(query, page, sort);
 
-    public async Task<MidiShowPageResult> BrowseAsync(int page = 1, string sort = "", string category = "", bool forceRefresh = false, CancellationToken ct = default)
+    public async Task<OnlineMidiPageResult> BrowseAsync(int page = 1, string sort = "", string category = "", bool forceRefresh = false, CancellationToken ct = default)
     {
         if (!forceRefresh)
         {
@@ -265,7 +267,7 @@ public sealed class MidiShowAccountPool : IDisposable
         return result;
     }
 
-    public async Task<MidiShowPageResult> SearchAsync(string query, int page = 1, string sort = "", bool forceRefresh = false, CancellationToken ct = default)
+    public async Task<OnlineMidiPageResult> SearchAsync(string query, int page = 1, string sort = "", bool forceRefresh = false, CancellationToken ct = default)
     {
         if (!forceRefresh)
         {
@@ -280,7 +282,7 @@ public sealed class MidiShowAccountPool : IDisposable
         return result;
     }
 
-    public async Task<MidiShowDetails> GetDetailsAsync(MidiShowItem item, CancellationToken ct = default)
+    public async Task<MidiShowDetails> GetDetailsAsync(OnlineMidiItem item, CancellationToken ct = default)
     {
         // Check disk cache first.
         var cached = MidiShowCache.TryLoadDetails(item.Id);
@@ -593,3 +595,4 @@ public sealed class MidiShowAccountPool : IDisposable
         _browseClient.Dispose();
     }
 }
+

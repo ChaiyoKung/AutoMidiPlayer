@@ -40,6 +40,7 @@ body:
         - Neverness to Everness
         - "Blue Protocol: Star Resonance"
         - "Harry Potter: Magic Awakened"
+        - Core Keeper
     validations:
       required: false
   - type: input

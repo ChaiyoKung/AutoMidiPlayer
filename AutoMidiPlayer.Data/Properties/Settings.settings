@@ -110,6 +110,9 @@
     <Setting Name="WutheringWavesLocation" Type="System.String" Scope="User">
       <Value Profile="(Default)">Client-Win64-Shipping.exe</Value>
     </Setting>
+    <Setting Name="CoreKeeperLocation" Type="System.String" Scope="User">
+      <Value Profile="(Default)">CoreKeeper.exe</Value>
+    </Setting>
     <Setting Name="ActiveGenshin" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
@@ -132,6 +135,9 @@
       <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="ActiveWutheringWaves" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="ActiveCoreKeeper" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="SelectedInstrument" Type="System.Int32" Scope="User">

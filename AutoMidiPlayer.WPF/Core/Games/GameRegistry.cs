@@ -122,6 +122,17 @@ public static class GameRegistry
             setLocation: v => Settings.Modify(s => s.HPMALocation = v),
             getIsActive: () => Settings.ActiveHPMA,
             setIsActive: v => Settings.Modify(s => s.ActiveHPMA = v)
+        ),
+        new GameDefinition(
+            id: "Core Keeper",
+            displayName: "Core Keeper",
+            instrumentGameName: "Core Keeper",
+            imageResourcePath: "pack://application:,,,/Resources/Images/Games/Core_Keeper.png",
+            processNames: ["CoreKeeper"],
+            getLocation: () => Settings.CoreKeeperLocation,
+            setLocation: v => Settings.Modify(s => s.CoreKeeperLocation = v),
+            getIsActive: () => Settings.ActiveCoreKeeper,
+            setIsActive: v => Settings.Modify(s => s.ActiveCoreKeeper = v)
         )
     ];
 

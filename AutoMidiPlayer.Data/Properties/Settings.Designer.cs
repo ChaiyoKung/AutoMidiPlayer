@@ -450,6 +450,18 @@ namespace AutoMidiPlayer.Data.Properties {
                 this["WutheringWavesLocation"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("CoreKeeper.exe")]
+        public string CoreKeeperLocation {
+            get {
+                return ((string)(this["CoreKeeperLocation"]));
+            }
+            set {
+                this["CoreKeeperLocation"] = value;
+            }
+        }
 
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -544,6 +556,18 @@ namespace AutoMidiPlayer.Data.Properties {
             }
             set {
                 this["ActiveWutheringWaves"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool ActiveCoreKeeper {
+            get {
+                return ((bool)(this["ActiveCoreKeeper"]));
+            }
+            set {
+                this["ActiveCoreKeeper"] = value;
             }
         }
 

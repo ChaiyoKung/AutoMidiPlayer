@@ -27,7 +27,7 @@ https://github.com/user-attachments/assets/8e7d8dec-33c4-4d2b-a268-4abd1dbac405
 - **Sky: Children of the Light** - All available Sky instruments as of Feb 2026
 - **Neverness to Everness (NTE)** - Piano (21-key & 36-key)
 - **Harry Potter: Magic Awakened (HPMA)** - Piano (14-key & 36-key)
-- **Core Keeper** - All instruments (shared 24-key chromatic layout, C3–B4)
+- **Core Keeper** - All instruments (shared 24-key chromatic layout; sounding range C2–B3 up to C5–B6 per instrument)
 
 See the [Support wiki page][wiki-support] for details on supported games, instruments, and keyboard layouts.
 

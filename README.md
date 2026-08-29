@@ -27,6 +27,7 @@ https://github.com/user-attachments/assets/8e7d8dec-33c4-4d2b-a268-4abd1dbac405
 - **Sky: Children of the Light** - All available Sky instruments as of Feb 2026
 - **Neverness to Everness (NTE)** - Piano (21-key & 36-key)
 - **Harry Potter: Magic Awakened (HPMA)** - Piano (14-key & 36-key)
+- **Core Keeper** - All instruments (shared 24-key chromatic layout, C3–B4)
 
 See the [Support wiki page][wiki-support] for details on supported games, instruments, and keyboard layouts.
 
@@ -45,7 +46,7 @@ See the [Support wiki page][wiki-support] for details on supported games, instru
 ## Features
 
 ### Core Features
-* **Multi-game support** - Play on Genshin Impact, Wuthering Waves, Sky, Roblox, Heartopia, Neverness to Everness, Blue Protocol: Star Resonance and Harry Potter: Magic Awakened
+* **Multi-game support** - Play on Genshin Impact, Wuthering Waves, Sky, Roblox, Heartopia, Neverness to Everness, Blue Protocol: Star Resonance, Harry Potter: Magic Awakened and Core Keeper
 * **Spotify-style UI** - Modern player interface with fixed bottom controls
 * **Per-song Settings** - Key offset, transpose, speed, and BPM settings are saved for each song
 
@@ -91,6 +92,7 @@ The short answer is that it's uncertain. Use it at your own risk. Do not play so
 * For Sky, see their policy on [third-party apps](https://thatgamecompany.helpshift.com/hc/en/17-sky-children-of-the-light/faq/1250-can-i-use-or-create-third-party-applications-like-mods-or-bots/).
 * For Roblox, refer to their [third-party services Terms of Use](https://en.help.roblox.com/hc/en-us/articles/115004647846-Roblox-Terms-of-Use#third-party-services).
 * For Neverness to Everness, see their [Data collected to prevent cheating and unauthorized software](https://static.pwsdk.com/nte/privacy/privacy.html).
+* For Core Keeper, no official policy on third-party tools has been published by Pugstorm. Use at your own risk, and be considerate on multiplayer servers.
 
 
 ## Documentation
@@ -137,7 +139,7 @@ This project was originally forked from **[sabihoshi/GenshinLyreMidiPlayer][Gens
 * This project’s source code is licensed under the [GNU General Public License v3.0](LICENSE).
 * This project is based on [sabihoshi/GenshinLyreMidiPlayer][GenshinLyreMidiPlayer]. Original attribution and upstream notices are preserved in [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md).
 * "**Auto MIDI Player**" and its logo are trademarks of Jed556. Trademark and branding use are governed by [TRADEMARK.md](TRADEMARK.md).
-* This project is not affiliated with or endorsed by miHoYo, KURO GAMES, XD, thatgamecompany, Roblox Corporation, Hotta Studio, or any other rights holder. Genshin Impact™, Wuthering Waves™, Heartopia™, Sky: Children of the Light™, Roblox™, Neverness to Everness™, and other game titles and properties belong to their respective owners.
+* This project is not affiliated with or endorsed by miHoYo, KURO GAMES, XD, thatgamecompany, Roblox Corporation, Hotta Studio, Pugstorm, or any other rights holder. Genshin Impact™, Wuthering Waves™, Heartopia™, Sky: Children of the Light™, Roblox™, Neverness to Everness™, Core Keeper™, and other game titles and properties belong to their respective owners.
 * Third-party libraries and other resources used by this project may be distributed under different licenses and are listed in [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md).
 
 <br/>

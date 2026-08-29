@@ -33,9 +33,13 @@ body:
       multiple: true
       options:
         - Genshin Impact
+        - Wuthering Waves
         - Heartopia
         - Roblox
         - Sky
+        - Neverness to Everness
+        - "Blue Protocol: Star Resonance"
+        - "Harry Potter: Magic Awakened"
     validations:
       required: false
   - type: input

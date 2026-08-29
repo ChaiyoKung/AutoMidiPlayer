@@ -45,7 +45,7 @@ See the [Support wiki page][wiki-support] for details on supported games, instru
 ## Features
 
 ### Core Features
-* **Multi-game support** - Play on Genshin Impact, Wuthering Waves, Sky, Roblox and Heartopia
+* **Multi-game support** - Play on Genshin Impact, Wuthering Waves, Sky, Roblox, Heartopia, Neverness to Everness, Blue Protocol: Star Resonance and Harry Potter: Magic Awakened
 * **Spotify-style UI** - Modern player interface with fixed bottom controls
 * **Per-song Settings** - Key offset, transpose, speed, and BPM settings are saved for each song
 

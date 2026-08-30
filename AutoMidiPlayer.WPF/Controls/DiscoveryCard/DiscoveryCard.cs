@@ -13,7 +13,20 @@ namespace AutoMidiPlayer.WPF.Controls;
 public partial class DiscoveryCard : UserControl
 {
     private static readonly Random s_rng = new();
-    private static readonly System.Collections.Generic.HashSet<string> s_animatedIds = new();
+
+    /// <summary>
+    /// Tracks whether this control instance is currently displaying a skeleton.
+    /// Set to true when a skeleton is shown, reset to false after the transition animation fires.
+    /// Per-instance (not static) so virtualization recycling and re-navigation work correctly.
+    /// </summary>
+    private bool _wasShowingSkeleton;
+
+    /// <summary>
+    /// Incremented each time the card enters skeleton state. Queued animation callbacks capture
+    /// this value and bail out if it has changed, preventing stale callbacks from corrupting
+    /// the skeleton display during rapid page navigation.
+    /// </summary>
+    private int _animationGeneration;
 
     public DiscoveryCard()
     {
@@ -41,13 +54,6 @@ public partial class DiscoveryCard : UserControl
         {
             item.PropertyChanged += OnItemPropertyChanged;
 
-            bool oldWasLoading = e.OldValue is Services.OnlineMidi.OnlineMidiItem oldItem && oldItem.IsLoading;
-            bool isNewlyLoaded = !item.IsLoading && !string.IsNullOrEmpty(item.Id) && !s_animatedIds.Contains(item.Id) && oldWasLoading;
-            if (isNewlyLoaded)
-            {
-                s_animatedIds.Add(item.Id);
-            }
-
             // Reset avatar fade state for new data context.
             if (FindName("AvatarImageEllipse") is Ellipse ellipse)
             {
@@ -55,37 +61,46 @@ public partial class DiscoveryCard : UserControl
                 ellipse.Opacity = 0;
             }
 
-            ResetAllAnimationsAndSkeletons();
-            
-            if (item.IsLoading)
-                RandomizeSkeletonWidths();
-            
-            var meta = FindName("MetaContent") as FrameworkElement;
-            if (meta != null) meta.BeginAnimation(UIElement.OpacityProperty, null);
-
-            var tags = FindName("TagsContent") as FrameworkElement;
-            if (tags != null) tags.BeginAnimation(UIElement.OpacityProperty, null);
-
             if (item.IsLoading)
             {
-                RandomizeSkeletonWidths();
+                if (!_wasShowingSkeleton)
+                {
+                    // Transitioning from content → skeleton. Full setup needed.
+                    ResetAllAnimationsAndSkeletons();
+                    RandomizeSkeletonWidths();
+                    _wasShowingSkeleton = true;
+                }
+                // else: already showing skeletons (rapid clicking) — skip expensive reset/randomize.
+                _animationGeneration++;
             }
-
-            if (isNewlyLoaded)
+            else if (_wasShowingSkeleton)
             {
+                // Transition: skeleton → real content. Fire the animation.
+                _wasShowingSkeleton = false;
+                ResetAllAnimationsAndSkeletons();
+
+                var meta = FindName("MetaContent") as FrameworkElement;
+                if (meta != null) meta.BeginAnimation(UIElement.OpacityProperty, null);
+                var tags = FindName("TagsContent") as FrameworkElement;
+                if (tags != null) tags.BeginAnimation(UIElement.OpacityProperty, null);
+
                 var zeroAnim = new DoubleAnimation(0, 0, TimeSpan.Zero);
                 if (FindName("TitleText") is FrameworkElement t) t.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
                 if (FindName("DescText") is FrameworkElement d) d.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
                 if (meta != null) meta.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
                 if (tags != null) tags.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
 
+                var gen = _animationGeneration;
                 Dispatcher.BeginInvoke(() => {
+                    if (_animationGeneration != gen) return; // stale — a new skeleton cycle started
                     SetupAvatarFadeIn(true);
                     AnimateTextContent();
                 }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
-            else if (!item.IsLoading)
+            else
             {
+                // Data already loaded (e.g. recycled card), no animation needed.
+                ResetAllAnimationsAndSkeletons();
                 Dispatcher.BeginInvoke(() => SetupAvatarFadeIn(false), System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
@@ -139,8 +154,34 @@ public partial class DiscoveryCard : UserControl
             {
                 if (item.IsLoading)
                 {
-                    ResetAllAnimationsAndSkeletons();
-                    RandomizeSkeletonWidths();
+                    if (!_wasShowingSkeleton)
+                    {
+                        // Transitioning from content → skeleton. Full setup needed.
+                        ResetAllAnimationsAndSkeletons();
+                        RandomizeSkeletonWidths();
+                        _wasShowingSkeleton = true;
+                    }
+                    // else: already showing skeletons (rapid clicking) — skip expensive reset/randomize.
+                    _animationGeneration++;
+                }
+                else if (_wasShowingSkeleton)
+                {
+                    // Same object transitioned IsLoading from true → false (no DataContext swap).
+                    // Trigger the skeleton → content animation.
+                    _wasShowingSkeleton = false;
+
+                    var zeroAnim = new DoubleAnimation(0, 0, TimeSpan.Zero);
+                    if (FindName("TitleText") is FrameworkElement t) t.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
+                    if (FindName("DescText") is FrameworkElement d) d.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
+                    if (FindName("MetaContent") is FrameworkElement m) m.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
+                    if (FindName("TagsContent") is FrameworkElement tg) tg.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
+
+                    var gen = _animationGeneration;
+                    Dispatcher.BeginInvoke(() => {
+                        if (_animationGeneration != gen) return; // stale — a new skeleton cycle started
+                        SetupAvatarFadeIn(true);
+                        AnimateTextContent();
+                    }, System.Windows.Threading.DispatcherPriority.Loaded);
                 }
             }
             else if (e.PropertyName == nameof(Services.OnlineMidi.OnlineMidiItem.IsLoadingDetails))

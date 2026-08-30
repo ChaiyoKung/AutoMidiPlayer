@@ -56,6 +56,7 @@ public sealed class OnlineMidiViewModel : Screen
                 NotifyOfPropertyChange(nameof(SortOptions));
                 NotifyOfPropertyChange(nameof(HasCategories));
                 NotifyOfPropertyChange(nameof(HasSortOptions));
+                NotifyOfPropertyChange(nameof(SearchPlaceholderText));
                 
                 ApplyDefaultFilters(skipLoad: true);
                 
@@ -65,6 +66,8 @@ public sealed class OnlineMidiViewModel : Screen
             }
         }
     }
+
+    public string SearchPlaceholderText => $"Search {CurrentProvider?.DisplayName ?? "MIDI"} by track, artist, keyword...";
 
     private void ApplyDefaultFilters(bool skipLoad = false)
     {
@@ -726,10 +729,11 @@ public sealed class OnlineMidiViewModel : Screen
         }
         catch (Exception ex)
         {
-            Logger.Log("Failed to load MidiShow listing.");
+            var providerName = CurrentProvider?.DisplayName ?? "MIDI";
+            Logger.Log($"Failed to load {providerName} listing.");
             Logger.LogException(ex);
-            StatusMessage = "Could not reach MidiShow. Check your connection and try again.";
-            SnackbarService.Danger("MidiShow", "Could not load the MIDI list.");
+            StatusMessage = $"Could not reach {providerName}. Check your connection and try again.";
+            SnackbarService.Danger(providerName, "Could not load the MIDI list.");
             if (_loadCts == cts)
                 Results.Clear();
         }
@@ -911,7 +915,8 @@ public sealed class OnlineMidiViewModel : Screen
         }
         catch (Exception ex)
         {
-            Logger.Log("MidiShow add-to-songs failed.");
+            var providerName = CurrentProvider?.DisplayName ?? "Online MIDI";
+            Logger.Log($"{providerName} add-to-songs failed.");
             Logger.LogException(ex);
             SnackbarService.Danger("Couldn't add to Songs", "An unexpected error occurred.");
         }
@@ -1009,7 +1014,8 @@ public sealed class OnlineMidiViewModel : Screen
         {
             await ResumeMainIfPreviewFailed(pausedMain);
 
-            Logger.Log("MidiShow preview failed.");
+            var providerName = CurrentProvider?.DisplayName ?? "Online MIDI";
+            Logger.Log($"{providerName} preview failed.");
             Logger.LogException(ex);
             SnackbarService.Danger("Preview failed", "Could not play this MIDI. The audio synth may be unavailable.");
         }

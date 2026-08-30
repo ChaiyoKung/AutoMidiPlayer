@@ -12,6 +12,13 @@ public class NanoMidiProvider : IOnlineMidiProvider
 {
     private static readonly HttpClient Http = new HttpClient();
 
+    static NanoMidiProvider()
+    {
+        Http.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        Http.Timeout = TimeSpan.FromSeconds(30);
+    }
+
     public string Id => "NanoMidi";
     public string DisplayName => "nanoMIDI";
     public bool RequiresAccount => false;

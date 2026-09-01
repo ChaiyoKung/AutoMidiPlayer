@@ -12,6 +12,16 @@ public class GameImageStateConverter : IMultiValueConverter
     private static readonly ConcurrentDictionary<string, BitmapSource> ColorCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, BitmapSource> GrayCache = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Clears both the color and grayscale image caches.
+    /// Call when the game list changes or during manual cache clearing.
+    /// </summary>
+    public static void ClearCache()
+    {
+        ColorCache.Clear();
+        GrayCache.Clear();
+    }
+
     public object? Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
         if (values.Length < 1)

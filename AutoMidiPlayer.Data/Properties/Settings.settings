@@ -266,15 +266,15 @@
     <Setting Name="CacheMaxSizeMB" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
+    <Setting Name="LastOptedOutLogDate" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">1900-01-01</Value>
+    </Setting>
     <Setting Name="SqliteConnection" Type="(Connection string)" Scope="Application">
       <DesignTimeValue Profile="(Default)">&lt;?xml version="1.0" encoding="utf-16"?&gt;
 &lt;SerializableConnectionString xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
   &lt;ConnectionString&gt;history.db&lt;/ConnectionString&gt;
 &lt;/SerializableConnectionString&gt;</DesignTimeValue>
       <Value Profile="(Default)">history.db</Value>
-    </Setting>
-    <Setting Name="LastOptedOutLogDate" Type="System.DateTime" Scope="User">
-      <Value Profile="(Default)">1900-01-01</Value>
     </Setting>
   </Settings>
 </SettingsFile>

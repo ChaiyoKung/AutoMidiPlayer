@@ -3,32 +3,41 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
+using System.Windows;
 using System.Windows.Data;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using AutoMidiPlayer.WPF.Services.MidiShow;
+using SkiaSharp;
 
 namespace AutoMidiPlayer.WPF.Converters;
 
 /// <summary>
-/// Converts a remote thumbnail URL (string) into a shared <see cref="BitmapImage"/>.
-/// Each distinct URL is downloaded and decoded once — at a small size, since thumbnails are
-/// only ever shown in 50–64px circles — and the resulting image is cached both in memory and
-/// on disk (under <c>cache/discover/MidiShow/avatar/</c>). This keeps scrolling and paging
-/// the results list from re-downloading or re-decoding thumbnails, and avoids holding
-/// full-resolution bitmaps in memory for tiny on-screen avatars.
+/// Converts a remote thumbnail URL (string) into a shared <see cref="BitmapSource"/>.
+/// Uses SkiaSharp for deterministic unmanaged memory disposal, completely bypassing WPF's leaky image decoder.
 /// </summary>
 public sealed class UrlToCachedImageConverter : IValueConverter
 {
-    // 128px wide is ample for a 50–64px circle even on high-DPI displays.
     private const int DecodeWidth = 128;
+    private const int MaxMemoryCacheSize = 60;
 
-    private static readonly ConcurrentDictionary<string, BitmapImage> Cache =
+    private static readonly ConcurrentDictionary<string, BitmapSource> Cache =
         new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly Lazy<HttpClient> Http = new(() => new HttpClient());
 
-    /// <summary>Clears the in-memory avatar cache. Call after clearing the disk cache.</summary>
-    public static void ClearMemoryCache() => Cache.Clear();
+    private static readonly ConcurrentQueue<string> _lruQueue = new();
+
+    private static void UpdateLru(string url)
+    {
+        _lruQueue.Enqueue(url);
+    }
+
+    public static void ClearMemoryCache() 
+    {
+        Cache.Clear();
+        _lruQueue.Clear();
+    }
 
     public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
@@ -38,74 +47,130 @@ public sealed class UrlToCachedImageConverter : IValueConverter
         if (!Uri.TryCreate(url.Trim(), UriKind.Absolute, out var uri))
             return null;
 
+        if (Cache.Count > MaxMemoryCacheSize && !Cache.ContainsKey(uri.AbsoluteUri))
+        {
+            Cache.Clear();
+        }
+
         return Cache.GetOrAdd(uri.AbsoluteUri, key =>
         {
-            // Check disk cache first.
             var cachedPath = MidiShowCache.TryGetAvatarPath(key);
             if (cachedPath is not null)
                 return LoadFromFile(cachedPath);
 
-            // Download from remote, save to disk in the background.
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.UriSource = new Uri(key, UriKind.Absolute);
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;           // decode immediately, then release the source stream
-            bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-            bitmap.DecodePixelWidth = DecodeWidth;                   // never keep the full-res image for a tiny circle
-            bitmap.EndInit();
-
-            // Remote URLs download asynchronously and can't be frozen until that finishes; the
-            // cached instance still updates itself when the download completes. Local/cached
-            // sources are ready immediately, so freeze those to drop thread affinity and copies.
-            if (bitmap.IsDownloading)
-            {
-                bitmap.DownloadCompleted += (sender, _) =>
-                {
-                    if (sender is BitmapImage img)
-                    {
-                        // Save to disk cache in the background.
-                        SaveToDiskAsync(key, img);
-                    }
-                };
-            }
-            else
-            {
-                bitmap.Freeze();
-                SaveToDiskAsync(key, bitmap);
-            }
-
-            return bitmap;
+            // Create a small placeholder for immediate return while fetching
+            return _placeholder;
         });
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => throw new NotSupportedException();
 
-    private static BitmapImage LoadFromFile(string path)
+    private static readonly BitmapSource _placeholder = CreatePlaceholder();
+
+    private static BitmapSource CreatePlaceholder()
     {
-        var bitmap = new BitmapImage();
-        bitmap.BeginInit();
-        bitmap.UriSource = new Uri(path, UriKind.Absolute);
-        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-        bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-        bitmap.DecodePixelWidth = DecodeWidth;
-        bitmap.EndInit();
-        if (!bitmap.IsDownloading)
-            bitmap.Freeze();
-        return bitmap;
+        var bmp = BitmapSource.Create(
+            DecodeWidth, DecodeWidth, 96, 96, PixelFormats.Bgra32, null,
+            new byte[DecodeWidth * DecodeWidth * 4], DecodeWidth * 4);
+        bmp.Freeze();
+        return bmp;
     }
 
-    private static async void SaveToDiskAsync(string url, BitmapImage bitmap)
+    private static BitmapSource DecodeWithSkia(byte[] data)
+    {
+        using var skBitmap = SKBitmap.Decode(data);
+        if (skBitmap == null) return _placeholder;
+
+        // Calculate aspect-ratio-preserving dimensions
+        int targetWidth = DecodeWidth;
+        int targetHeight = (int)(skBitmap.Height * ((float)DecodeWidth / skBitmap.Width));
+
+        var info = new SKImageInfo(targetWidth, targetHeight);
+        using var resizedBitmap = skBitmap.Resize(info, new SKSamplingOptions(SKFilterMode.Linear));
+        if (resizedBitmap == null) return _placeholder;
+
+        // Must create BitmapSource on the UI thread
+        var wpfBitmap = Application.Current?.Dispatcher?.Invoke(() =>
+        {
+            var size = resizedBitmap.RowBytes * resizedBitmap.Height;
+            var bmp = BitmapSource.Create(
+                resizedBitmap.Width,
+                resizedBitmap.Height,
+                96, 96,
+                PixelFormats.Bgra32,
+                null,
+                resizedBitmap.GetPixels(),
+                size,
+                resizedBitmap.RowBytes);
+            bmp.Freeze();
+            return bmp;
+        });
+
+        return wpfBitmap ?? _placeholder;
+    }
+
+    private static BitmapSource LoadFromFile(string path)
     {
         try
         {
-            // Re-download the raw bytes for disk storage (the BitmapImage doesn't expose them).
-            var data = await Http.Value.GetByteArrayAsync(url);
-            await MidiShowCache.SaveAvatarAsync(url, data);
+            var data = File.ReadAllBytes(path);
+            return DecodeWithSkia(data);
         }
         catch
         {
-            // Disk caching is best-effort; don't let it break the UI.
+            return _placeholder;
+        }
+    }
+
+    public static async System.Threading.Tasks.Task<BitmapSource?> GetImageAsync(string url, System.Threading.CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+        
+        if (Cache.TryGetValue(url, out var memHit))
+        {
+            UpdateLru(url);
+            return memHit;
+        }
+
+        var cachedPath = MidiShowCache.TryGetAvatarPath(url);
+        if (cachedPath is not null)
+        {
+            var bmp = LoadFromFile(cachedPath);
+            Cache[url] = bmp;
+            UpdateLru(url);
+            EvictOldImages();
+            return bmp;
+        }
+
+        try
+        {
+            var data = await Http.Value.GetByteArrayAsync(url, ct);
+            _ = MidiShowCache.SaveAvatarAsync(url, data);
+
+            var bitmap = DecodeWithSkia(data);
+
+            Cache[url] = bitmap;
+            UpdateLru(url);
+            EvictOldImages();
+
+            return bitmap;
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void EvictOldImages()
+    {
+        while (_lruQueue.Count > MaxMemoryCacheSize && _lruQueue.TryDequeue(out var oldestUrl))
+        {
+            Cache.TryRemove(oldestUrl, out _);
         }
     }
 }

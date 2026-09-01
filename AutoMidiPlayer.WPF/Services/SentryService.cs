@@ -146,15 +146,17 @@ public class SentryService : ISentryService
             // Release Health: track session stability
             options.AutoSessionTracking = true;
 
-            // Capture 100% of transactions for tracing (adjust in production)
+            // Tracing and profiling: full capture in Debug, reduced in Release to save ~30-50MB RAM
+#if DEBUG
             options.TracesSampleRate = 1.0;
-
-            // Profile 100% of captured transactions (adjust in production)
             options.ProfilesSampleRate = 1.0;
             options.AddIntegration(new ProfilingIntegration(
-                // Wait up to 500ms to profile app startup code
                 TimeSpan.FromMilliseconds(500)
             ));
+#else
+            options.TracesSampleRate = 0.1;
+            options.ProfilesSampleRate = 0.05;
+#endif
 
             // Enable structured logs
             options.EnableLogs = true;

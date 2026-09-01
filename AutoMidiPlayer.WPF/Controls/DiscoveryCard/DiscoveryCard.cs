@@ -33,6 +33,13 @@ public partial class DiscoveryCard : UserControl
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        // Cancel any pending avatar download immediately when scrolled out of view.
+        _avatarCts?.Cancel();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -199,39 +206,37 @@ public partial class DiscoveryCard : UserControl
         }
     }
 
-    private BitmapImage? _subscribedBitmap;
+    private System.Threading.CancellationTokenSource? _avatarCts;
 
-    private void SetupAvatarFadeIn(bool forceAnimate)
+    private async void SetupAvatarFadeIn(bool forceAnimate)
     {
-        // Unsubscribe from previous bitmap
-        if (_subscribedBitmap is not null)
+        // Cancel any pending download
+        _avatarCts?.Cancel();
+        _avatarCts = null;
+
+        if (FindName("AvatarImageEllipse") is not Ellipse ellipse) return;
+        if (FindName("AvatarBrush") is not ImageBrush brush) return;
+
+        // Reset brush and hide
+        brush.ImageSource = null;
+        ellipse.BeginAnimation(UIElement.OpacityProperty, null);
+        ellipse.Opacity = 0;
+
+        if (DataContext is Services.OnlineMidi.OnlineMidiItem item && !string.IsNullOrEmpty(item.ThumbnailUrl))
         {
-            _subscribedBitmap.DownloadCompleted -= OnAvatarDownloadCompleted;
-            _subscribedBitmap = null;
-        }
+            var cts = new System.Threading.CancellationTokenSource();
+            _avatarCts = cts;
 
-        if (FindName("AvatarImageEllipse") is not Ellipse ellipse)
-            return;
-
-        if (FindName("AvatarBrush") is not ImageBrush brush)
-            return;
-
-        if (brush.ImageSource is BitmapImage bitmap)
-        {
-            if (bitmap.IsDownloading)
+            try
             {
-                // Image still downloading — hide and subscribe for fade-in when done
-                ellipse.BeginAnimation(UIElement.OpacityProperty, null); // clear any running animation
-                ellipse.Opacity = 0;
-                _subscribedBitmap = bitmap;
-                bitmap.DownloadCompleted += OnAvatarDownloadCompleted;
-            }
-            else
-            {
-                // Already cached/downloaded
+                var bmp = await AutoMidiPlayer.WPF.Converters.UrlToCachedImageConverter.GetImageAsync(item.ThumbnailUrl, cts.Token);
+                
+                if (cts.IsCancellationRequested || _avatarCts != cts) return;
+                
+                brush.ImageSource = bmp;
+
                 if (forceAnimate)
                 {
-                    ellipse.Opacity = 0;
                     var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(500)))
                     {
                         EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
@@ -240,48 +245,17 @@ public partial class DiscoveryCard : UserControl
                 }
                 else
                 {
-                    ellipse.BeginAnimation(UIElement.OpacityProperty, null);
                     ellipse.Opacity = 1;
                 }
             }
-        }
-        else if (brush.ImageSource is not null)
-        {
-            // Non-BitmapImage source (already available)
-            if (forceAnimate)
+            catch (System.OperationCanceledException)
             {
-                ellipse.Opacity = 0;
-                var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(500)))
-                {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                };
-                ellipse.BeginAnimation(UIElement.OpacityProperty, anim);
+                // Expected when scrolled out of view or page clicked Next
             }
-            else
+            catch
             {
-                ellipse.BeginAnimation(UIElement.OpacityProperty, null);
-                ellipse.Opacity = 1;
+                // Network error, leave hidden
             }
-        }
-        else
-        {
-            // No image source — hide (music note icon shows)
-            ellipse.BeginAnimation(UIElement.OpacityProperty, null);
-            ellipse.Opacity = 0;
-        }
-    }
-
-    private void OnAvatarDownloadCompleted(object? sender, EventArgs e)
-    {
-        if (sender is BitmapImage bitmap)
-            bitmap.DownloadCompleted -= OnAvatarDownloadCompleted;
-        _subscribedBitmap = null;
-
-        if (FindName("AvatarImageEllipse") is Ellipse ellipse)
-        {
-            // Animate fade-in only when a download just finished
-            var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.3)));
-            ellipse.BeginAnimation(UIElement.OpacityProperty, anim);
         }
     }
 

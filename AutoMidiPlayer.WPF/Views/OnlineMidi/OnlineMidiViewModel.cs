@@ -9,6 +9,7 @@ using System.ComponentModel;
 using AutoMidiPlayer.Data;
 using AutoMidiPlayer.Data.Midi.Extensions;
 using AutoMidiPlayer.WPF.Controls.Snackbar;
+using AutoMidiPlayer.WPF.Services;
 using AutoMidiPlayer.WPF.Services.MidiShow;
 using AutoMidiPlayer.WPF.Services.OnlineMidi;
 using AutoMidiPlayer.WPF.Controls.MidiPreviewPlayer;
@@ -745,12 +746,20 @@ public sealed class OnlineMidiViewModel : Screen
             {
                 _loadCts = null;
                 SetBusy(false);
+                
+                // Call in the GarbageMan to clean up unmanaged image memory from the previous page
+                GarbageManService.TakeOutTheTrash();
             }
         }
     }
 
     private void UpdateResultsCollection(IReadOnlyList<OnlineMidiItem> items, bool isSearch, string statusText = "")
     {
+        // Explicitly clear the thumbnail image cache from the previous page.
+        // This drops the ~5-10MB of strong references held by the cache, allowing the GC
+        // to fully collect the unmanaged image memory when the new page settles.
+        AutoMidiPlayer.WPF.Converters.UrlToCachedImageConverter.ClearMemoryCache();
+
         if (PreviewPlayer.IsPreviewActive && _currentPreviewItem != null)
         {
             foreach (var item in items)

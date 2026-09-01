@@ -526,7 +526,15 @@ public sealed class MidiShowClient : IDisposable
         if (cache)
         {
             lock (_pageCache)
+            {
+                if (_pageCache.Count >= 3)
+                {
+                    // Evict the oldest entries to keep max capacity at 3.
+                    var oldest = _pageCache.OrderBy(kvp => kvp.Value.At).Take(_pageCache.Count - 2).Select(k => k.Key).ToList();
+                    foreach (var k in oldest) _pageCache.Remove(k);
+                }
                 _pageCache[url] = (html, DateTime.UtcNow);
+            }
         }
 
         return html;

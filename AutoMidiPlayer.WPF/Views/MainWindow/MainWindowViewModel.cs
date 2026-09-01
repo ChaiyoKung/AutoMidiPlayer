@@ -425,6 +425,16 @@ public class MainWindowViewModel : Conductor<IScreen>, IHandle<MidiFile>
         Logger.LogPageVisit("About", source: "titlebar");
     }
 
+    protected override void ChangeActiveItem(IScreen newItem, bool closePrevious)
+    {
+        base.ChangeActiveItem(newItem, closePrevious);
+
+        // Call the GarbageMan whenever we switch pages to clean up any messy 
+        // object graphs or unmanaged memory left behind by the previous page.
+        // This is especially important when leaving the local Songs list or Discovery page.
+        GarbageManService.TakeOutTheTrash(aggressive: true);
+    }
+
     public void ToggleGameSelector()
     {
         if (!IsGameSelectorOpen && (DateTime.UtcNow - _lastGameSelectorCloseTime).TotalMilliseconds < 250)
@@ -683,6 +693,13 @@ public class MainWindowViewModel : Conductor<IScreen>, IHandle<MidiFile>
         var restoredFile = QueueView.OpenedFile;
         if (restoredFile is not null)
             _ = RestoreStartupSongAsync(restoredFile, savedPosition);
+
+        // Call in the GarbageMan to sweep up the startup mess.
+        GarbageManService.TakeOutTheTrash(aggressive: true);
+
+        // Backfill cached MIDI metadata (duration, BPM) for songs that don't have it yet.
+        // This runs at low priority so subsequent launches skip MIDI parsing entirely.
+        _ = FileService.WarmCacheForUncachedSongsAsync();
     }
 
     private async Task RestoreStartupSongAsync(MidiFile restoredFile, double? savedPosition)

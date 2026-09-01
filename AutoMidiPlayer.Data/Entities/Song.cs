@@ -47,6 +47,14 @@ public class Song
     /// Custom BPM override. If null, uses MIDI file's native BPM.
     public double? Bpm { get; set; }
 
+    /// Cached duration in milliseconds from last MIDI parse.
+    /// Avoids re-parsing the MIDI file just to display duration in the song list.
+    public long? CachedDurationMs { get; set; }
+
+    /// Cached native BPM from MIDI tempo map.
+    /// Avoids re-parsing the MIDI file just to display BPM in the song list.
+    public double? CachedNativeBpm { get; set; }
+
     /// Comma-separated list of disabled track indices (0-based).
     public string? DisabledTracks { get; set; }
 

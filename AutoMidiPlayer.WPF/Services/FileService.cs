@@ -782,6 +782,10 @@ public class FileService(IContainer ioc)
 
             await ApplyDetectedSongKeyAsync(song, loadedFile);
 
+            // Persist cached MIDI metadata (duration, BPM) so subsequent launches
+            // skip parsing this file entirely. Only persist if the song is already in the DB.
+            await PersistCachedMetadataIfNeededAsync(song);
+
             RemoveBadMidiFileEntries(song.Path, false);
             RemoveDuplicateMidiFileEntries(song.Path, false);
             if (notifyFileErrors)
@@ -858,6 +862,98 @@ public class FileService(IContainer ioc)
 
     private static bool ShouldAutoDetectSongKey(Song song) =>
         song.Id == Guid.Empty && Settings.AutoDetectBaseKey;
+
+    /// <summary>
+    /// Persists cached MIDI metadata (Duration, NativeBpm) to the database for a song
+    /// that was just parsed for the first time. Skips songs not yet saved to DB.
+    /// </summary>
+    private async Task PersistCachedMetadataIfNeededAsync(Song song)
+    {
+        // Only persist for songs already in the database
+        if (song.Id == Guid.Empty)
+            return;
+
+        // Only persist if we actually have cached values to write
+        if (!song.CachedDurationMs.HasValue && !song.CachedNativeBpm.HasValue)
+            return;
+
+        try
+        {
+            await using var db = _ioc.Get<PlayerContext>();
+            db.Songs.Attach(song);
+            db.Entry(song).Property(s => s.CachedDurationMs).IsModified = true;
+            db.Entry(song).Property(s => s.CachedNativeBpm).IsModified = true;
+            await db.SaveChangesAsync();
+        }
+        catch
+        {
+            // Best-effort: don't fail file loading because cache persistence failed.
+        }
+    }
+
+    /// <summary>
+    /// Background task that parses and caches Duration/BPM for songs that don't have
+    /// cached values yet. Runs at low priority after startup so subsequent app launches
+    /// can skip MIDI parsing entirely for all songs.
+    /// </summary>
+    public async Task WarmCacheForUncachedSongsAsync()
+    {
+        if (_main is null) return;
+
+        try
+        {
+            // Small delay to let startup UI settle
+            await Task.Delay(1000);
+
+            var uncachedSongs = _main.SongsView.Tracks
+                .Where(t => !t.Song.CachedDurationMs.HasValue || !t.Song.CachedNativeBpm.HasValue)
+                .ToList();
+
+            if (uncachedSongs.Count == 0)
+                return;
+
+            Logger.Log($"CACHE_WARMUP_BEGIN | uncached={uncachedSongs.Count}");
+            var cached = 0;
+
+            foreach (var midiFile in uncachedSongs)
+            {
+                try
+                {
+                    // Parse on background thread if not already loaded
+                    if (!midiFile.IsMidiLoaded)
+                    {
+                        await Task.Run(() =>
+                        {
+                            midiFile.EnsureMidiLoaded();
+                        });
+                    }
+                    else
+                    {
+                        // Already loaded, just ensure cache is populated
+                        midiFile.CacheMetadata();
+                    }
+
+                    await PersistCachedMetadataIfNeededAsync(midiFile.Song);
+                    cached++;
+
+                    // Yield every few songs to avoid monopolizing the thread pool
+                    if (cached % 5 == 0)
+                        await Task.Delay(50);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"CACHE_WARMUP_SKIP path='{midiFile.Path}' | error={ex.Message}");
+                }
+            }
+
+            Logger.Log($"CACHE_WARMUP_END | cached={cached}/{uncachedSongs.Count}");
+        }
+        catch (Exception ex)
+        {
+            Logger.Log("Cache warm-up failed.");
+            Logger.LogException(ex);
+        }
+    }
 
     private static string? NormalizePath(string? path)
     {

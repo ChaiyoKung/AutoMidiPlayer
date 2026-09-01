@@ -95,6 +95,9 @@
     <Setting Name="RobloxLocation" Type="System.String" Scope="User">
       <Value Profile="(Default)">RobloxPlayerBeta.exe</Value>
     </Setting>
+    <Setting Name="CoreKeeperLocation" Type="System.String" Scope="User">
+      <Value Profile="(Default)">CoreKeeper.exe</Value>
+    </Setting>
     <Setting Name="SkyLocation" Type="System.String" Scope="User">
       <Value Profile="(Default)">Sky.exe</Value>
     </Setting>
@@ -123,6 +126,9 @@
       <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="ActiveHeartopia" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="ActiveCoreKeeper" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="ActiveBPSR" Type="System.Boolean" Scope="User">

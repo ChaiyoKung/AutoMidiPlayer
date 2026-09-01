@@ -15,7 +15,7 @@ If you just want to run the program, there are precompiled releases that can be 
 
 ### Requirements
 * [Git](https://git-scm.com) for cloning the project
-* [.NET 5.0](https://dotnet.microsoft.com/download/dotnet/5.0) SDK
+* [.NET 10.0](https://dotnet.microsoft.com/download/dotnet/10.0) SDK
 
 #### Publish a single binary for Windows
 ```bat

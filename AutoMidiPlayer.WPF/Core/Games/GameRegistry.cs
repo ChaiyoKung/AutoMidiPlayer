@@ -47,9 +47,8 @@ public static class GameRegistry
             displayName: "Wuthering Waves",
             instrumentGameName: "Wuthering Waves",
             imageResourcePath: "pack://application:,,,/Resources/Images/Games/Wuthering_Waves.png",
-            // The configured executable path also contributes its process name, allowing users
-            // to select a regional client manually if another distribution uses a different name.
             processNames: ["Client-Win64-Shipping", "Wuthering Waves"],
+            windowNames: ["Wuthering Waves"],
             getLocation: () => Settings.WutheringWavesLocation,
             setLocation: v => Settings.Modify(s => s.WutheringWavesLocation = v),
             getIsActive: () => Settings.ActiveWutheringWaves,

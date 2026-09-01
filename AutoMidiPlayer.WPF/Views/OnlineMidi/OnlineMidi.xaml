@@ -62,7 +62,7 @@
             <ui:TextBox x:Name="SearchBox"
                         Grid.Row="0"
                         Grid.Column="0"
-                        PlaceholderText="Search MidiShow by track, artist, keyword..."
+                        PlaceholderText="{Binding SearchPlaceholderText, FallbackValue='Search by track, artist, keyword...'}"
                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
                         Icon="Search12"
                         ClearButtonEnabled="False"

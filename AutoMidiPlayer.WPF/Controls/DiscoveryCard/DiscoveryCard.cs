@@ -13,13 +13,33 @@ namespace AutoMidiPlayer.WPF.Controls;
 public partial class DiscoveryCard : UserControl
 {
     private static readonly Random s_rng = new();
-    private static readonly System.Collections.Generic.HashSet<string> s_animatedIds = new();
+
+    /// <summary>
+    /// Tracks whether this control instance is currently displaying a skeleton.
+    /// Set to true when a skeleton is shown, reset to false after the transition animation fires.
+    /// Per-instance (not static) so virtualization recycling and re-navigation work correctly.
+    /// </summary>
+    private bool _wasShowingSkeleton;
+
+    /// <summary>
+    /// Incremented each time the card enters skeleton state. Queued animation callbacks capture
+    /// this value and bail out if it has changed, preventing stale callbacks from corrupting
+    /// the skeleton display during rapid page navigation.
+    /// </summary>
+    private int _animationGeneration;
 
     public DiscoveryCard()
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        // Cancel any pending avatar download immediately when scrolled out of view.
+        _avatarCts?.Cancel();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -41,13 +61,6 @@ public partial class DiscoveryCard : UserControl
         {
             item.PropertyChanged += OnItemPropertyChanged;
 
-            bool oldWasLoading = e.OldValue is Services.OnlineMidi.OnlineMidiItem oldItem && oldItem.IsLoading;
-            bool isNewlyLoaded = !item.IsLoading && !string.IsNullOrEmpty(item.Id) && !s_animatedIds.Contains(item.Id) && oldWasLoading;
-            if (isNewlyLoaded)
-            {
-                s_animatedIds.Add(item.Id);
-            }
-
             // Reset avatar fade state for new data context.
             if (FindName("AvatarImageEllipse") is Ellipse ellipse)
             {
@@ -55,37 +68,46 @@ public partial class DiscoveryCard : UserControl
                 ellipse.Opacity = 0;
             }
 
-            ResetAllAnimationsAndSkeletons();
-            
-            if (item.IsLoading)
-                RandomizeSkeletonWidths();
-            
-            var meta = FindName("MetaContent") as FrameworkElement;
-            if (meta != null) meta.BeginAnimation(UIElement.OpacityProperty, null);
-
-            var tags = FindName("TagsContent") as FrameworkElement;
-            if (tags != null) tags.BeginAnimation(UIElement.OpacityProperty, null);
-
             if (item.IsLoading)
             {
-                RandomizeSkeletonWidths();
+                if (!_wasShowingSkeleton)
+                {
+                    // Transitioning from content → skeleton. Full setup needed.
+                    ResetAllAnimationsAndSkeletons();
+                    RandomizeSkeletonWidths();
+                    _wasShowingSkeleton = true;
+                }
+                // else: already showing skeletons (rapid clicking) — skip expensive reset/randomize.
+                _animationGeneration++;
             }
-
-            if (isNewlyLoaded)
+            else if (_wasShowingSkeleton)
             {
+                // Transition: skeleton → real content. Fire the animation.
+                _wasShowingSkeleton = false;
+                ResetAllAnimationsAndSkeletons();
+
+                var meta = FindName("MetaContent") as FrameworkElement;
+                if (meta != null) meta.BeginAnimation(UIElement.OpacityProperty, null);
+                var tags = FindName("TagsContent") as FrameworkElement;
+                if (tags != null) tags.BeginAnimation(UIElement.OpacityProperty, null);
+
                 var zeroAnim = new DoubleAnimation(0, 0, TimeSpan.Zero);
                 if (FindName("TitleText") is FrameworkElement t) t.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
                 if (FindName("DescText") is FrameworkElement d) d.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
                 if (meta != null) meta.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
                 if (tags != null) tags.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
 
+                var gen = _animationGeneration;
                 Dispatcher.BeginInvoke(() => {
+                    if (_animationGeneration != gen) return; // stale — a new skeleton cycle started
                     SetupAvatarFadeIn(true);
                     AnimateTextContent();
                 }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
-            else if (!item.IsLoading)
+            else
             {
+                // Data already loaded (e.g. recycled card), no animation needed.
+                ResetAllAnimationsAndSkeletons();
                 Dispatcher.BeginInvoke(() => SetupAvatarFadeIn(false), System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
@@ -139,8 +161,34 @@ public partial class DiscoveryCard : UserControl
             {
                 if (item.IsLoading)
                 {
-                    ResetAllAnimationsAndSkeletons();
-                    RandomizeSkeletonWidths();
+                    if (!_wasShowingSkeleton)
+                    {
+                        // Transitioning from content → skeleton. Full setup needed.
+                        ResetAllAnimationsAndSkeletons();
+                        RandomizeSkeletonWidths();
+                        _wasShowingSkeleton = true;
+                    }
+                    // else: already showing skeletons (rapid clicking) — skip expensive reset/randomize.
+                    _animationGeneration++;
+                }
+                else if (_wasShowingSkeleton)
+                {
+                    // Same object transitioned IsLoading from true → false (no DataContext swap).
+                    // Trigger the skeleton → content animation.
+                    _wasShowingSkeleton = false;
+
+                    var zeroAnim = new DoubleAnimation(0, 0, TimeSpan.Zero);
+                    if (FindName("TitleText") is FrameworkElement t) t.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
+                    if (FindName("DescText") is FrameworkElement d) d.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
+                    if (FindName("MetaContent") is FrameworkElement m) m.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
+                    if (FindName("TagsContent") is FrameworkElement tg) tg.BeginAnimation(UIElement.OpacityProperty, zeroAnim);
+
+                    var gen = _animationGeneration;
+                    Dispatcher.BeginInvoke(() => {
+                        if (_animationGeneration != gen) return; // stale — a new skeleton cycle started
+                        SetupAvatarFadeIn(true);
+                        AnimateTextContent();
+                    }, System.Windows.Threading.DispatcherPriority.Loaded);
                 }
             }
             else if (e.PropertyName == nameof(Services.OnlineMidi.OnlineMidiItem.IsLoadingDetails))
@@ -158,39 +206,37 @@ public partial class DiscoveryCard : UserControl
         }
     }
 
-    private BitmapImage? _subscribedBitmap;
+    private System.Threading.CancellationTokenSource? _avatarCts;
 
-    private void SetupAvatarFadeIn(bool forceAnimate)
+    private async void SetupAvatarFadeIn(bool forceAnimate)
     {
-        // Unsubscribe from previous bitmap
-        if (_subscribedBitmap is not null)
+        // Cancel any pending download
+        _avatarCts?.Cancel();
+        _avatarCts = null;
+
+        if (FindName("AvatarImageEllipse") is not Ellipse ellipse) return;
+        if (FindName("AvatarBrush") is not ImageBrush brush) return;
+
+        // Reset brush and hide
+        brush.ImageSource = null;
+        ellipse.BeginAnimation(UIElement.OpacityProperty, null);
+        ellipse.Opacity = 0;
+
+        if (DataContext is Services.OnlineMidi.OnlineMidiItem item && !string.IsNullOrEmpty(item.ThumbnailUrl))
         {
-            _subscribedBitmap.DownloadCompleted -= OnAvatarDownloadCompleted;
-            _subscribedBitmap = null;
-        }
+            var cts = new System.Threading.CancellationTokenSource();
+            _avatarCts = cts;
 
-        if (FindName("AvatarImageEllipse") is not Ellipse ellipse)
-            return;
-
-        if (FindName("AvatarBrush") is not ImageBrush brush)
-            return;
-
-        if (brush.ImageSource is BitmapImage bitmap)
-        {
-            if (bitmap.IsDownloading)
+            try
             {
-                // Image still downloading — hide and subscribe for fade-in when done
-                ellipse.BeginAnimation(UIElement.OpacityProperty, null); // clear any running animation
-                ellipse.Opacity = 0;
-                _subscribedBitmap = bitmap;
-                bitmap.DownloadCompleted += OnAvatarDownloadCompleted;
-            }
-            else
-            {
-                // Already cached/downloaded
+                var bmp = await AutoMidiPlayer.WPF.Converters.UrlToCachedImageConverter.GetImageAsync(item.ThumbnailUrl, cts.Token);
+                
+                if (cts.IsCancellationRequested || _avatarCts != cts) return;
+                
+                brush.ImageSource = bmp;
+
                 if (forceAnimate)
                 {
-                    ellipse.Opacity = 0;
                     var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(500)))
                     {
                         EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
@@ -199,48 +245,17 @@ public partial class DiscoveryCard : UserControl
                 }
                 else
                 {
-                    ellipse.BeginAnimation(UIElement.OpacityProperty, null);
                     ellipse.Opacity = 1;
                 }
             }
-        }
-        else if (brush.ImageSource is not null)
-        {
-            // Non-BitmapImage source (already available)
-            if (forceAnimate)
+            catch (System.OperationCanceledException)
             {
-                ellipse.Opacity = 0;
-                var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(500)))
-                {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                };
-                ellipse.BeginAnimation(UIElement.OpacityProperty, anim);
+                // Expected when scrolled out of view or page clicked Next
             }
-            else
+            catch
             {
-                ellipse.BeginAnimation(UIElement.OpacityProperty, null);
-                ellipse.Opacity = 1;
+                // Network error, leave hidden
             }
-        }
-        else
-        {
-            // No image source — hide (music note icon shows)
-            ellipse.BeginAnimation(UIElement.OpacityProperty, null);
-            ellipse.Opacity = 0;
-        }
-    }
-
-    private void OnAvatarDownloadCompleted(object? sender, EventArgs e)
-    {
-        if (sender is BitmapImage bitmap)
-            bitmap.DownloadCompleted -= OnAvatarDownloadCompleted;
-        _subscribedBitmap = null;
-
-        if (FindName("AvatarImageEllipse") is Ellipse ellipse)
-        {
-            // Animate fade-in only when a download just finished
-            var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.3)));
-            ellipse.BeginAnimation(UIElement.OpacityProperty, anim);
         }
     }
 

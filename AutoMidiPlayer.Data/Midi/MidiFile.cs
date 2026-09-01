@@ -23,7 +23,19 @@ public class MidiFile : Screen
         _settings.TextEncoding = System.Text.Encoding.UTF8;
 
         Song = song;
-        InitializeMidi();
+
+        if (song.CachedDurationMs.HasValue && song.CachedNativeBpm.HasValue)
+        {
+            // Metadata already cached from a previous parse — skip expensive disk I/O.
+            // The full MIDI will be parsed on-demand when the song is opened for playback.
+            Logger.LogMidiParser($"MIDI_LOAD_SKIPPED (cached) path='{Path}'");
+        }
+        else
+        {
+            // First-time load or cache missing — parse now and cache metadata
+            InitializeMidi();
+            CacheMetadata();
+        }
     }
 
     public Song Song { get; }
@@ -34,12 +46,24 @@ public class MidiFile : Screen
         set => SetAndNotify(ref _position, value);
     }
 
-    public Melanchall.DryWetMidi.Core.MidiFile Midi { get; private set; } = null!;
+    /// <summary>
+    /// The parsed DryWetMidi file object. Null when the MIDI file has not been parsed yet
+    /// (lazy-loaded songs with cached metadata skip parsing until playback).
+    /// Callers that need the full MIDI tree should use <see cref="EnsureMidiLoaded"/>
+    /// or rely on <see cref="PlaybackEngineService"/> which calls <see cref="InitializeMidi"/>
+    /// before accessing this property.
+    /// </summary>
+    public Melanchall.DryWetMidi.Core.MidiFile? Midi { get; private set; }
+
+    /// <summary>
+    /// Whether the full MIDI file has been parsed into memory.
+    /// </summary>
+    public bool IsMidiLoaded => Midi is not null;
 
     /// <summary>
     /// The original tempo map from the MIDI file, preserved regardless of track changes.
     /// </summary>
-    public TempoMap OriginalTempoMap { get; private set; } = null!;
+    public TempoMap? OriginalTempoMap { get; private set; }
 
     public string Path => Song.Path;
 
@@ -51,6 +75,13 @@ public class MidiFile : Screen
     {
         get
         {
+            // Use cached value if MIDI hasn't been parsed yet
+            if (!IsMidiLoaded && Song.CachedDurationMs.HasValue)
+                return TimeSpan.FromMilliseconds(Song.CachedDurationMs.Value);
+
+            if (Midi is null)
+                return TimeSpan.Zero;
+
             try
             {
                 return Midi.GetDuration<MetricTimeSpan>();
@@ -65,9 +96,17 @@ public class MidiFile : Screen
 
     /// <summary>
     /// Gets the BPM from the MIDI file's tempo map. Returns the tempo at the start of the file.
+    /// Falls back to cached value if MIDI is not loaded.
     /// </summary>
     public double GetNativeBpm()
     {
+        // Use cached value if MIDI hasn't been parsed yet
+        if (!IsMidiLoaded && Song.CachedNativeBpm.HasValue)
+            return Song.CachedNativeBpm.Value;
+
+        if (Midi is null)
+            return 120.0; // Default BPM fallback
+
         var tempoMap = Midi.GetTempoMap();
         var tempo = tempoMap.GetTempoAtTime(new MetricTimeSpan(0));
         return tempo.BeatsPerMinute;
@@ -79,7 +118,18 @@ public class MidiFile : Screen
     public double EffectiveBpm => Song.Bpm ?? GetNativeBpm();
 
     public IEnumerable<Melanchall.DryWetMidi.Core.MidiFile> Split(uint bars, uint beats, uint ticks) =>
-        Midi.SplitByGrid(new SteppedGrid(new BarBeatTicksTimeSpan(bars, beats, ticks)));
+        Midi?.SplitByGrid(new SteppedGrid(new BarBeatTicksTimeSpan(bars, beats, ticks)))
+        ?? Enumerable.Empty<Melanchall.DryWetMidi.Core.MidiFile>();
+
+    /// <summary>
+    /// Ensures the full MIDI file is parsed into memory. No-op if already loaded.
+    /// Call this before accessing <see cref="Midi"/> directly.
+    /// </summary>
+    public void EnsureMidiLoaded()
+    {
+        if (!IsMidiLoaded)
+            InitializeMidi();
+    }
 
     public void InitializeMidi()
     {
@@ -96,5 +146,38 @@ public class MidiFile : Screen
         var nativeBpm = GetNativeBpm();
         Logger.LogMidiParser(
             $"MIDI_LOAD_END path='{Path}' | tracks={trackCount} | bpm={nativeBpm:0.###} | elapsedMs={sw.Elapsed.TotalMilliseconds:0}");
+
+        // Update cached metadata whenever we parse
+        CacheMetadata();
+    }
+
+    /// <summary>
+    /// Writes the current Duration and NativeBpm to the Song entity's cache properties.
+    /// The caller is responsible for persisting the Song to the database.
+    /// </summary>
+    public void CacheMetadata()
+    {
+        if (Midi is null) return;
+
+        try
+        {
+            var duration = Midi.GetDuration<MetricTimeSpan>();
+            Song.CachedDurationMs = (long)((TimeSpan)duration).TotalMilliseconds;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            Song.CachedDurationMs = 0;
+        }
+
+        try
+        {
+            var tempoMap = Midi.GetTempoMap();
+            var tempo = tempoMap.GetTempoAtTime(new MetricTimeSpan(0));
+            Song.CachedNativeBpm = tempo.BeatsPerMinute;
+        }
+        catch
+        {
+            Song.CachedNativeBpm = 120.0;
+        }
     }
 }

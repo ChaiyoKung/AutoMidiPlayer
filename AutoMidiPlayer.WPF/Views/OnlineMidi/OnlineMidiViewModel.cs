@@ -9,6 +9,7 @@ using System.ComponentModel;
 using AutoMidiPlayer.Data;
 using AutoMidiPlayer.Data.Midi.Extensions;
 using AutoMidiPlayer.WPF.Controls.Snackbar;
+using AutoMidiPlayer.WPF.Services;
 using AutoMidiPlayer.WPF.Services.MidiShow;
 using AutoMidiPlayer.WPF.Services.OnlineMidi;
 using AutoMidiPlayer.WPF.Controls.MidiPreviewPlayer;
@@ -56,6 +57,7 @@ public sealed class OnlineMidiViewModel : Screen
                 NotifyOfPropertyChange(nameof(SortOptions));
                 NotifyOfPropertyChange(nameof(HasCategories));
                 NotifyOfPropertyChange(nameof(HasSortOptions));
+                NotifyOfPropertyChange(nameof(SearchPlaceholderText));
                 
                 ApplyDefaultFilters(skipLoad: true);
                 
@@ -65,6 +67,8 @@ public sealed class OnlineMidiViewModel : Screen
             }
         }
     }
+
+    public string SearchPlaceholderText => $"Search {CurrentProvider?.DisplayName ?? "MIDI"} by track, artist, keyword...";
 
     private void ApplyDefaultFilters(bool skipLoad = false)
     {
@@ -726,10 +730,11 @@ public sealed class OnlineMidiViewModel : Screen
         }
         catch (Exception ex)
         {
-            Logger.Log("Failed to load MidiShow listing.");
+            var providerName = CurrentProvider?.DisplayName ?? "MIDI";
+            Logger.Log($"Failed to load {providerName} listing.");
             Logger.LogException(ex);
-            StatusMessage = "Could not reach MidiShow. Check your connection and try again.";
-            SnackbarService.Danger("MidiShow", "Could not load the MIDI list.");
+            StatusMessage = $"Could not reach {providerName}. Check your connection and try again.";
+            SnackbarService.Danger(providerName, "Could not load the MIDI list.");
             if (_loadCts == cts)
                 Results.Clear();
         }
@@ -741,12 +746,20 @@ public sealed class OnlineMidiViewModel : Screen
             {
                 _loadCts = null;
                 SetBusy(false);
+                
+                // Call in the GarbageMan to clean up unmanaged image memory from the previous page
+                GarbageManService.TakeOutTheTrash();
             }
         }
     }
 
     private void UpdateResultsCollection(IReadOnlyList<OnlineMidiItem> items, bool isSearch, string statusText = "")
     {
+        // Explicitly clear the thumbnail image cache from the previous page.
+        // This drops the ~5-10MB of strong references held by the cache, allowing the GC
+        // to fully collect the unmanaged image memory when the new page settles.
+        AutoMidiPlayer.WPF.Converters.UrlToCachedImageConverter.ClearMemoryCache();
+
         if (PreviewPlayer.IsPreviewActive && _currentPreviewItem != null)
         {
             foreach (var item in items)
@@ -911,7 +924,8 @@ public sealed class OnlineMidiViewModel : Screen
         }
         catch (Exception ex)
         {
-            Logger.Log("MidiShow add-to-songs failed.");
+            var providerName = CurrentProvider?.DisplayName ?? "Online MIDI";
+            Logger.Log($"{providerName} add-to-songs failed.");
             Logger.LogException(ex);
             SnackbarService.Danger("Couldn't add to Songs", "An unexpected error occurred.");
         }
@@ -1009,7 +1023,8 @@ public sealed class OnlineMidiViewModel : Screen
         {
             await ResumeMainIfPreviewFailed(pausedMain);
 
-            Logger.Log("MidiShow preview failed.");
+            var providerName = CurrentProvider?.DisplayName ?? "Online MIDI";
+            Logger.Log($"{providerName} preview failed.");
             Logger.LogException(ex);
             SnackbarService.Danger("Preview failed", "Could not play this MIDI. The audio synth may be unavailable.");
         }

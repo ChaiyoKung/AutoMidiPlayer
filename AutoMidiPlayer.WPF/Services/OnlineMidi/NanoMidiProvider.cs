@@ -12,6 +12,13 @@ public class NanoMidiProvider : IOnlineMidiProvider
 {
     private static readonly HttpClient Http = new HttpClient();
 
+    static NanoMidiProvider()
+    {
+        Http.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        Http.Timeout = TimeSpan.FromSeconds(30);
+    }
+
     public string Id => "NanoMidi";
     public string DisplayName => "nanoMIDI";
     public bool RequiresAccount => false;
@@ -35,48 +42,48 @@ public class NanoMidiProvider : IOnlineMidiProvider
             url += $"&search={Uri.EscapeDataString(query)}";
         }
 
-        var response = await Http.GetAsync(url, ct);
+        using var response = await Http.GetAsync(url, ct);
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        var root = JsonSerializer.Deserialize<Dictionary<string, object>>(json) ?? new Dictionary<string, object>();
-        var documentsRaw = root.TryGetValue("data", out var docs) ? docs : null;
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
         
         var items = new List<OnlineMidiItem>();
-        if (documentsRaw is JsonElement element && element.ValueKind == JsonValueKind.Array)
+        if (root.TryGetProperty("data", out var documentsRaw) && documentsRaw.ValueKind == JsonValueKind.Array)
         {
-            foreach (var doc in element.EnumerateArray())
+            foreach (var element in documentsRaw.EnumerateArray())
             {
                 try 
                 {
-                    var id = doc.TryGetProperty("$id", out var pid) ? pid.GetString() ?? "" : "";
-                    var name = doc.TryGetProperty("name", out var pname) ? pname.GetString() ?? "" : "";
-                    var uploader = doc.TryGetProperty("uploader", out var puploader) ? puploader.GetString() ?? "" : "";
-                    var downloads = doc.TryGetProperty("downloads", out var pdown) ? pdown.GetRawText() : "0";
-                    var views = doc.TryGetProperty("views", out var pviews) ? pviews.GetRawText() : "0";
-                    var bpm = doc.TryGetProperty("bpm", out var pbpm) ? pbpm.GetRawText() : "";
+                    var id = element.TryGetProperty("$id", out var pid) ? pid.GetString() ?? "" : "";
+                    var name = element.TryGetProperty("name", out var pname) ? pname.GetString() ?? "" : "";
+                    var uploader = element.TryGetProperty("uploader", out var puploader) ? puploader.GetString() ?? "" : "";
+                    var downloads = element.TryGetProperty("downloads", out var pdown) ? pdown.GetRawText() : "0";
+                    var views = element.TryGetProperty("views", out var pviews) ? pviews.GetRawText() : "0";
+                    var bpm = element.TryGetProperty("bpm", out var pbpm) ? pbpm.GetRawText() : "";
                     
                     var sizeStr = "";
-                    if (doc.TryGetProperty("size", out var psize) && psize.TryGetInt32(out var sizeBytes)) {
+                    if (element.TryGetProperty("size", out var psize) && psize.TryGetInt32(out var sizeBytes)) {
                         sizeStr = (sizeBytes / 1024.0).ToString("0.00") + " KB";
                     }
 
-                    var arranger = doc.TryGetProperty("arranger", out var parr) ? parr.GetString() : "";
+                    var arranger = element.TryGetProperty("arranger", out var parr) ? parr.GetString() : "";
                     if (arranger == "null") arranger = "";
                     
-                    var createdAt = doc.TryGetProperty("$createdAt", out var pcreate) ? pcreate.GetString() ?? "" : "";
+                    var createdAt = element.TryGetProperty("$createdAt", out var pcreate) ? pcreate.GetString() ?? "" : "";
                     
-                    var mf = doc.TryGetProperty("midifile", out var pmf) ? pmf.GetString() ?? "" : "";
+                    var mf = element.TryGetProperty("midifile", out var pmf) ? pmf.GetString() ?? "" : "";
                     
                     string? thumbnailUrl = null;
-                    if (doc.TryGetProperty("imagefile", out var pimg) && pimg.ValueKind == JsonValueKind.String)
+                    if (element.TryGetProperty("imagefile", out var pimg) && pimg.ValueKind == JsonValueKind.String)
                     {
                         var img = pimg.GetString();
                         if (!string.IsNullOrEmpty(img))
                             thumbnailUrl = $"https://api.nanomidi.net/api/v2/images/{img}?size=100x100";
                     }
 
-                    var artists = doc.TryGetProperty("artists", out var partists) ? partists.GetString() : "";
+                    var artists = element.TryGetProperty("artists", out var partists) ? partists.GetString() : "";
                     var desc = string.IsNullOrWhiteSpace(artists) ? "" : $"Artist: {artists}";
 
                     items.Add(new OnlineMidiItem {
@@ -167,7 +174,7 @@ public class NanoMidiProvider : IOnlineMidiProvider
 
     public async Task<byte[]> DownloadPreviewMidiAsync(OnlineMidiItem item, CancellationToken cancellationToken = default)
     {
-        var response = await Http.GetAsync($"https://api.nanomidi.net/api/midis/{item.PageUrl}", cancellationToken);
+        using var response = await Http.GetAsync($"https://api.nanomidi.net/api/midis/{item.PageUrl}", cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }

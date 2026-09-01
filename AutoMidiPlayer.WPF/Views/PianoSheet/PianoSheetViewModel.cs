@@ -154,6 +154,13 @@ public class PianoSheetViewModel : Screen, IHandle<OpenedFileChangedNotification
         NotifyOfPropertyChange(nameof(IsDelimiterWarningVisible));
         NotifyOfPropertyChange(nameof(DelimiterWarningText));
 
+        // Ensure MIDI is loaded before splitting (lazy-loaded songs may not have parsed yet)
+        if (openedFile.Midi is null)
+        {
+            Result = string.Empty;
+            return;
+        }
+
         // Ticks is too small so it is not included
         var split = openedFile.Split((uint)Bars, (uint)Beats, 0);
 

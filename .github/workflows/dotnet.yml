@@ -101,7 +101,7 @@ jobs:
           if (Test-Path .\install-fd) { Get-ChildItem .\install-fd\*.pdb -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue }
           7z a AutoMidiPlayer_${{ needs.prepare.outputs.version }}_win-x64-net-install.zip .\install-fd\* -mx9
 
-      - name: Upload net-install package
+      - name: Upload net-install artifact
         uses: actions/upload-artifact@v7.0.2
         with:
           name: net-install-package
@@ -147,7 +147,7 @@ jobs:
           7z a $portableArchive "$stagedExe" -mx9
           Remove-Item "$stagedExe" -Force
 
-      - name: Upload portable package
+      - name: Upload portable artifact
         uses: actions/upload-artifact@v7.0.2
         with:
           name: portable-package
@@ -164,13 +164,13 @@ jobs:
       - build_portable
 
     steps:
-      - name: Download net-install package
+      - name: Download net-install artifact
         uses: actions/download-artifact@v8.0.2
         with:
           name: net-install-package
           path: artifacts/net-install
 
-      - name: Download portable package
+      - name: Download portable artifact
         uses: actions/download-artifact@v8.0.2
         with:
           name: portable-package

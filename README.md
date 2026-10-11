@@ -10,14 +10,13 @@
   </p>
 </div>
 
-A feature-rich MIDI-to-key player for in-game instruments, built with C# and WPF and styled with Windows Mica.
-
 <div align="center">
+  <p>A feature-rich MIDI-to-key player for in-game instruments, built with C# and WPF and styled with Windows Mica.</p>
   <i>If you liked this project, consider <a href="CONTRIBUTING.md">contributing</a> or giving a 🌟 star. Thank you~</i>
 </div>
 <br/>
 
-https://github.com/user-attachments/assets/8e7d8dec-33c4-4d2b-a268-4abd1dbac405
+---
 
 ### Supported Games and Instruments
 - **Genshin Impact** - All 11 instruments as of August 2026
@@ -61,7 +60,7 @@ See the [Support wiki page][wiki-support] for details on supported games, instru
 * Sustain pedal support
 * Play using your own MIDI Input Device
 
-https://github.com/user-attachments/assets/e10a31d2-419c-4f41-bc1d-3f12cee36c0d
+<img width="1561" height="984" alt="image" src="https://github.com/user-attachments/assets/aebd26f5-9317-4f00-ae0c-8fec71fdde01" />
 
 ### Discovery (Online MIDI)
 Browse, search, and download thousands of MIDI files directly inside the app without opening a browser.
@@ -70,11 +69,13 @@ Browse, search, and download thousands of MIDI files directly inside the app wit
 * **Detailed Track Breakdown** - Inspect tracks, channels, instruments, note counts, BPM, ratings, and download counts
 * **Library Import** - Download and add tracks directly into your song list with original track names preserved
 
+<img width="1561" height="984" alt="image" src="https://github.com/user-attachments/assets/60f43e53-2bab-4bd2-82d8-562b956d35d9" />
+
 ### MIDI Track Management
 * Play multiple tracks of a MIDI file simultaneously
 * Turn on/off tracks in realtime
 
-https://github.com/user-attachments/assets/2519cab3-521f-4862-9af7-8404a1656582
+<img width="1561" height="984" alt="image" src="https://github.com/user-attachments/assets/758c6bc3-4aac-41ce-9d2a-0a3ee57abc59" />
 
 ### Studio View
 A piano roll interface to inspect notes, scrub through songs, and set mid-song key changes.
@@ -83,22 +84,20 @@ A piano roll interface to inspect notes, scrub through songs, and set mid-song k
 * Timeline scrubber with zoom controls and playhead tracking
 * Quick drawer to toggle tracks and tweak song settings
 
-> No preview yet
+<img width="1561" height="984" alt="image" src="https://github.com/user-attachments/assets/ec1a8fa1-e76a-4e79-b7a8-b65e8ed3ab99" />
 
 ### Piano Sheet
 The Piano Sheet allows you to easily share songs to other people, or for yourself to try. You can change the delimiter as well as the split size, and spacing. This will use the current keyboard layout that you have chosen.
 
-> No preview yet
+<img width="1561" height="984" alt="image" src="https://github.com/user-attachments/assets/e50f1578-23f5-49c6-a488-c5625cd68d2d" />
 
 ### Queue
 A queue allows you to play songs without having to open or delete a song or file.
 
-https://github.com/user-attachments/assets/e23776fa-2191-455e-bc6b-5518a969943b
+<img width="1561" height="984" alt="image" src="https://github.com/user-attachments/assets/0f6b3afa-834f-41f1-8a3f-d23a9c14d58e" />
 
 ### Theming
 You can set the player to light mode/dark mode and change its accent color.
-
-https://github.com/user-attachments/assets/f249be17-566c-4a4f-856b-9b03f55592ef
 
 ## About
 
@@ -109,12 +108,14 @@ MIDI files (.mid) are a set of instructions that play various instruments on wha
 The short answer is that it's uncertain. Use it at your own risk. Do not play songs that will spam the keyboard, listen to the MIDI file first and make sure to play only one instrument so that the tool doesn't spam keyboard inputs.
 * For Genshin Impact, here is [miHoYo's response](https://genshin.mihoyo.com/en/news/detail/5763) to using 3rd party tools.
 * For Wuthering Waves, review KURO's [User Agreement](https://wutheringwaves.kurogames.com/p/agreement_public.html) restrictions on unauthorized third-party software.
-* For Heartopia, here is their [Official Discord message](https://discord.com/channels/1128257488375005215/1460985755529773301/1465702188700405986) about using 3rd party tools.
+* For Neverness to Everness, see their [Data collected to prevent cheating and unauthorized software](https://static.pwsdk.com/nte/privacy/privacy.html).
+* For Where Winds Meet, check their [Ban Report page](https://www.wherewindsmeetgame.com/news/official/BanReport.html) for included violations.
+* For Blue Protocol: Star Resonance, check their [Terms of Service](https://www.playbpsr.com/terms).
 * For Sky, see their policy on [third-party apps](https://thatgamecompany.helpshift.com/hc/en/17-sky-children-of-the-light/faq/1250-can-i-use-or-create-third-party-applications-like-mods-or-bots/).
 * For Roblox, refer to their [third-party services Terms of Use](https://en.help.roblox.com/hc/en-us/articles/115004647846-Roblox-Terms-of-Use#third-party-services).
-* For Neverness to Everness, see their [Data collected to prevent cheating and unauthorized software](https://static.pwsdk.com/nte/privacy/privacy.html).
-* For Core Keeper, no official policy on third-party tools has been published by Pugstorm. Use at your own risk, and be considerate on multiplayer servers.
-
+* For Heartopia, here is their [Official Discord message](https://discord.com/channels/1128257488375005215/1460985755529773301/1465702188700405986) about using 3rd party tools.
+* For Core Keeper, read Fireshine Games' [Legal page](https://fireshinegames.co.uk/legal/).
+* For Harry Potter: Magic Awakened, check the User Conduct section in NetEase's [Terms of Use](https://protocol.unisdk.easebar.com/release/latest_v487.html).
 
 ## Documentation
 

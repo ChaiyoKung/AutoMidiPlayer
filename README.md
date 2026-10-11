@@ -50,6 +50,7 @@ See the [Support wiki page][wiki-support] for details on supported games, instru
 ### Core Features
 * **Multi-game support** - Play on Genshin Impact, Wuthering Waves, Sky, Roblox, Heartopia, Neverness to Everness, Blue Protocol: Star Resonance, Harry Potter: Magic Awakened, Core Keeper, and Where Winds Meet
 * **Spotify-style UI** - Modern player interface with fixed bottom controls
+* **Studio View** - Piano roll interface with scrubbing and mid-song key changes
 * **Per-song Settings** - Key offset, transpose, speed, and BPM settings are saved for each song
 
 ### Instrument Playback
@@ -74,6 +75,15 @@ Browse, search, and download thousands of MIDI files directly inside the app wit
 * Turn on/off tracks in realtime
 
 https://github.com/user-attachments/assets/2519cab3-521f-4862-9af7-8404a1656582
+
+### Studio View
+A piano roll interface to inspect notes, scrub through songs, and set mid-song key changes.
+* Real-time horizontal piano roll with keyboard guide and note highlighting
+* Add key change markers to modulate keys throughout the song (or auto-detect them from the MIDI file)
+* Timeline scrubber with zoom controls and playhead tracking
+* Quick drawer to toggle tracks and tweak song settings
+
+> No preview yet
 
 ### Piano Sheet
 The Piano Sheet allows you to easily share songs to other people, or for yourself to try. You can change the delimiter as well as the split size, and spacing. This will use the current keyboard layout that you have chosen.

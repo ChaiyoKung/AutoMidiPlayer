@@ -616,22 +616,37 @@ public class Bootstrapper : Bootstrapper<MainWindowViewModel>
             return db;
         });
 
-        builder.Bind<Windows.Media.Playback.MediaPlayer>().ToFactory(_ =>
+        builder.Bind<Windows.Media.Playback.MediaPlayer?>().ToFactory(_ =>
         {
-            var player = new Windows.Media.Playback.MediaPlayer();
-            var controls = player.SystemMediaTransportControls;
-
-            controls.IsEnabled = true;
-            controls.DisplayUpdater.Type = MediaPlaybackType.Music;
-
-            Task.Run(async () =>
+            try
             {
-                await Task.Yield();
-                controls.DisplayUpdater.Thumbnail =
-                    RandomAccessStreamReference.CreateFromUri(new Uri("ms-appx:///Resources/logo.png"));
-            });
+                var player = new Windows.Media.Playback.MediaPlayer();
+                var controls = player.SystemMediaTransportControls;
 
-            return player;
+                controls.IsEnabled = true;
+                controls.DisplayUpdater.Type = MediaPlaybackType.Music;
+
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Yield();
+                        controls.DisplayUpdater.Thumbnail =
+                            RandomAccessStreamReference.CreateFromUri(new Uri("ms-appx:///Resources/logo.png"));
+                    }
+                    catch
+                    {
+                        // Best-effort thumbnail loading for packaged apps
+                    }
+                });
+
+                return player;
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Windows Media Foundation / MediaPlayer not available (SMTC disabled): {ex.Message}");
+                return null;
+            }
         }).InSingletonScope();
 
         // Register GlobalHotkeyService as singleton

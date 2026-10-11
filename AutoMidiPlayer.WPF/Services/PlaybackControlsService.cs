@@ -81,13 +81,24 @@ public class PlaybackControlsService : PropertyChangedBase, IHandle<PlayTimerNot
         if (Environment.OSVersion.Platform == PlatformID.Win32NT &&
             Environment.OSVersion.Version.Major >= 10)
         {
-            _player = ioc.Get<WinMediaPlayer>();
+            try
+            {
+                _player = ioc.Get<WinMediaPlayer?>();
 
-            _player!.CommandManager.NextReceived += async (_, _) => await Next();
-            _player!.CommandManager.PreviousReceived += (_, _) => Previous();
+                if (_player is not null)
+                {
+                    _player.CommandManager.NextReceived += async (_, _) => await Next();
+                    _player.CommandManager.PreviousReceived += (_, _) => Previous();
 
-            _player!.CommandManager.PlayReceived += async (_, _) => await PlayPause();
-            _player!.CommandManager.PauseReceived += async (_, _) => await PlayPause();
+                    _player.CommandManager.PlayReceived += async (_, _) => await PlayPause();
+                    _player.CommandManager.PauseReceived += async (_, _) => await PlayPause();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Failed to initialize SystemMediaTransportControls: {ex.Message}");
+                _player = null;
+            }
         }
     }
 
@@ -211,11 +222,35 @@ public class PlaybackControlsService : PropertyChangedBase, IHandle<PlayTimerNot
         ? "<none>"
         : $"{Queue.OpenedFile.Title} ({Queue.OpenedFile.Path})";
 
-    private MusicDisplayProperties? Display =>
-        _player?.SystemMediaTransportControls.DisplayUpdater.MusicProperties;
+    private MusicDisplayProperties? Display
+    {
+        get
+        {
+            try
+            {
+                return _player?.SystemMediaTransportControls?.DisplayUpdater?.MusicProperties;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
 
-    private SystemMediaTransportControls? Controls =>
-        _player?.SystemMediaTransportControls;
+    private SystemMediaTransportControls? Controls
+    {
+        get
+        {
+            try
+            {
+                return _player?.SystemMediaTransportControls;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
 
     #endregion
 
@@ -572,25 +607,32 @@ public class PlaybackControlsService : PropertyChangedBase, IHandle<PlayTimerNot
 
         if (Controls is not null && Display is not null)
         {
-            Controls.IsPlayEnabled = CanHitPlayPause;
-            Controls.IsPauseEnabled = CanHitPlayPause;
-            Controls.IsNextEnabled = CanHitNext;
-            Controls.IsPreviousEnabled = CanHitPrevious;
-
-            Controls.PlaybackStatus =
-                Queue.OpenedFile is null ? MediaPlaybackStatus.Closed :
-                Engine.Playback is null ? MediaPlaybackStatus.Stopped :
-                Engine.Playback.IsRunning ? MediaPlaybackStatus.Playing :
-                MediaPlaybackStatus.Paused;
-
-            var file = Queue.OpenedFile;
-            if (file is not null)
+            try
             {
-                Display.Title = file.Title;
-                Display.Artist = string.IsNullOrWhiteSpace(file.Artist) ? "Unknown artist" : file.Artist;
-            }
+                Controls.IsPlayEnabled = CanHitPlayPause;
+                Controls.IsPauseEnabled = CanHitPlayPause;
+                Controls.IsNextEnabled = CanHitNext;
+                Controls.IsPreviousEnabled = CanHitPrevious;
 
-            Controls.DisplayUpdater.Update();
+                Controls.PlaybackStatus =
+                    Queue.OpenedFile is null ? MediaPlaybackStatus.Closed :
+                    Engine.Playback is null ? MediaPlaybackStatus.Stopped :
+                    Engine.Playback.IsRunning ? MediaPlaybackStatus.Playing :
+                    MediaPlaybackStatus.Paused;
+
+                var file = Queue.OpenedFile;
+                if (file is not null)
+                {
+                    Display.Title = file.Title;
+                    Display.Artist = string.IsNullOrWhiteSpace(file.Artist) ? "Unknown artist" : file.Artist;
+                }
+
+                Controls.DisplayUpdater.Update();
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Error updating SystemMediaTransportControls: {ex.Message}");
+            }
         }
     }
 

@@ -120,8 +120,15 @@ public class Song
         }
     }
 
+    /// <summary>
+    /// Whether key offset change markers are active. If null or true, markers are enabled.
+    /// </summary>
+    public bool? EnableKeyChangeMarkers { get; set; } = true;
+
     public KeyChangeMarker? GetKeyMarkerAtTime(TimeSpan time, long lookaheadMs = 0)
     {
+        if (EnableKeyChangeMarkers == false) return null;
+
         var markers = KeyChangeMarkers;
         var count = markers.Count;
         if (count == 0) return null;

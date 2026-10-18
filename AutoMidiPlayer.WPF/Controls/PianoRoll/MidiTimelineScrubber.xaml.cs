@@ -228,6 +228,25 @@ public partial class MidiTimelineScrubber : UserControl
         set => SetValue(KeyChangeMarkersProperty, value);
     }
 
+    public static readonly DependencyProperty KeyMarkersEnabledProperty =
+        DependencyProperty.Register(
+            nameof(KeyMarkersEnabled),
+            typeof(bool),
+            typeof(MidiTimelineScrubber),
+            new PropertyMetadata(true, (d, e) =>
+            {
+                if (d is MidiTimelineScrubber scrubber && scrubber.Canvas != null)
+                {
+                    scrubber.Canvas.KeyMarkersEnabled = (bool)e.NewValue;
+                }
+            }));
+
+    public bool KeyMarkersEnabled
+    {
+        get => (bool)GetValue(KeyMarkersEnabledProperty);
+        set => SetValue(KeyMarkersEnabledProperty, value);
+    }
+
     public static readonly DependencyProperty SelectedMarkerProperty =
         DependencyProperty.Register(
             nameof(SelectedMarker),

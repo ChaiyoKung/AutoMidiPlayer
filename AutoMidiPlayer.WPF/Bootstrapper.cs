@@ -59,7 +59,8 @@ public class Bootstrapper : Bootstrapper<MainWindowViewModel>
         ("BaseKey", "INTEGER NULL"),
         ("CachedDurationMs", "INTEGER NULL"),
         ("CachedNativeBpm", "REAL NULL"),
-        ("KeyChanges", "TEXT NULL")
+        ("KeyChanges", "TEXT NULL"),
+        ("EnableKeyChangeMarkers", "INTEGER NULL")
     ];
 
     public Bootstrapper()

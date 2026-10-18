@@ -683,6 +683,34 @@ public class PianoRollCanvas : FrameworkElement
         set => SetValue(KeyChangeMarkersProperty, value);
     }
 
+    public static readonly DependencyProperty KeyMarkersEnabledProperty =
+        DependencyProperty.Register(
+            nameof(KeyMarkersEnabled),
+            typeof(bool),
+            typeof(PianoRollCanvas),
+            new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender, OnKeyMarkersEnabledChanged));
+
+    private static void OnKeyMarkersEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is PianoRollCanvas canvas)
+        {
+            if (canvas.DisplayMode == PianoRollDisplayMode.Auto)
+            {
+                canvas.UpdateNotePitches();
+            }
+            else
+            {
+                canvas.InvalidateVisual();
+            }
+        }
+    }
+
+    public bool KeyMarkersEnabled
+    {
+        get => (bool)GetValue(KeyMarkersEnabledProperty);
+        set => SetValue(KeyMarkersEnabledProperty, value);
+    }
+
     public double KeyboardWidth { get; set; } = 64;
 
     public static readonly DependencyProperty HoverTimeProperty =
@@ -1467,6 +1495,12 @@ public class PianoRollCanvas : FrameworkElement
         var markers = KeyChangeMarkers;
         if (markers != null)
         {
+            var isMarkersEnabled = KeyMarkersEnabled;
+            if (!isMarkersEnabled)
+            {
+                dc.PushOpacity(0.35);
+            }
+
             foreach (var marker in markers)
             {
                 var markerX = KeyboardWidth + (marker.TimeMs - effectiveViewTimeMs) * pixelsPerMs;
@@ -1486,6 +1520,11 @@ public class PianoRollCanvas : FrameworkElement
                     dc.DrawRoundedRectangle(MarkerBadgeBrush, MarkerBadgePen, badgeRect, 3, 3);
                     dc.DrawText(formatted, new Point(badgeRect.X + 4, badgeRect.Y + 1));
                 }
+            }
+
+            if (!isMarkersEnabled)
+            {
+                dc.Pop();
             }
         }
 

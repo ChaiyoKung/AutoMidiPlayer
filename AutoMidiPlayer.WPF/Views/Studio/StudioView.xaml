@@ -209,6 +209,7 @@
                                                           CurrentTime="{Binding CurrentTime}"
                                                           Duration="{Binding Duration}"
                                                           KeyChangeMarkers="{Binding KeyChangeMarkers}"
+                                                          KeyMarkersEnabled="{Binding KeyMarkersEnabled}"
                                                           SelectedMarker="{Binding SelectedMarker, Mode=TwoWay}"
                                                           ZoomLevel="{Binding ZoomLevel, Mode=TwoWay}"
                                                           KeyHeight="{Binding KeyHeight, Mode=TwoWay}"
@@ -225,6 +226,7 @@
                             HorizontalAlignment="Left"
                             Margin="0,8,0,0"
                             Padding="12,8"
+                            MinHeight="46"
                             Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
@@ -345,6 +347,33 @@
                                            VerticalAlignment="Center"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                             </Border>
+                        </StackPanel>
+                    </Border>
+                    <!-- Key Offset Markers Toggle Card -->
+                    <Border Grid.Row="1"
+                            HorizontalAlignment="Right"
+                            Margin="0,8,0,0"
+                            Padding="12,8"
+                            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            MinHeight="46">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="Location16"
+                                           Filled="True"
+                                           FontSize="13"
+                                           Margin="0,0,8,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Text="Key Markers"
+                                       VerticalAlignment="Center"
+                                       FontWeight="SemiBold"
+                                       FontSize="12"
+                                       Margin="0,0,10,0" />
+                            <ui:ToggleSwitch IsChecked="{Binding KeyMarkersEnabled, Mode=TwoWay}"
+                                             VerticalAlignment="Center"
+                                             ToolTip="Enable or bypass timeline key offset markers" />
                         </StackPanel>
                     </Border>
                 </Grid>

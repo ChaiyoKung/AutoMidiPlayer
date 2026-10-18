@@ -423,6 +423,22 @@ public class StudioViewModel : Screen,
         }
     }
 
+    public bool KeyMarkersEnabled
+    {
+        get => CurrentFile?.Song?.EnableKeyChangeMarkers ?? true;
+        set
+        {
+            if (CurrentFile?.Song is not null && (CurrentFile.Song.EnableKeyChangeMarkers ?? true) != value)
+            {
+                CurrentFile.Song.EnableKeyChangeMarkers = value;
+                NotifyOfPropertyChange(nameof(KeyMarkersEnabled));
+                NotifyPitchUpdateRequired();
+                SongSettings.UpdateAdjustmentState();
+                _ = SaveSongPropertyAsync();
+            }
+        }
+    }
+
     private async Task SaveSongPropertyAsync()
     {
         if (CurrentFile?.Song is null) return;
@@ -646,6 +662,7 @@ public class StudioViewModel : Screen,
         _lastActiveKeyDisplay = string.Empty;
         _lastActiveDisplayModeText = string.Empty;
         UpdateActiveKeyDisplay();
+        NotifyOfPropertyChange(nameof(KeyMarkersEnabled));
         NotifyPitchUpdateRequired();
         SongDataReloaded?.Invoke(this, EventArgs.Empty);
     }
@@ -721,6 +738,11 @@ public class StudioViewModel : Screen,
     {
         if (CurrentFile?.Song is null)
             return;
+
+        if (!KeyMarkersEnabled)
+        {
+            KeyMarkersEnabled = true;
+        }
 
         var offset = SelectedKeyOption?.Value ?? SongSettings.KeyOffset;
         var noteName = MusicConstants.GetNoteName(offset);
@@ -805,6 +827,11 @@ public class StudioViewModel : Screen,
     {
         if (CurrentFile?.Midi is null)
             return;
+
+        if (!KeyMarkersEnabled)
+        {
+            KeyMarkersEnabled = true;
+        }
 
         var tempoMap = CurrentFile.OriginalTempoMap ?? TempoMap.Default;
         var detected = FileService.DetectKeyChangesFromMidi(CurrentFile.Midi, tempoMap);

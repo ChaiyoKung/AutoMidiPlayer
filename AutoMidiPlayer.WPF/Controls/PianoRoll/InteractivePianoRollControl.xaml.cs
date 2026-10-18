@@ -206,6 +206,28 @@ public partial class InteractivePianoRollControl : UserControl
         set => SetValue(KeyChangeMarkersProperty, value);
     }
 
+    public static readonly DependencyProperty KeyMarkersEnabledProperty =
+        DependencyProperty.Register(
+            nameof(KeyMarkersEnabled),
+            typeof(bool),
+            typeof(InteractivePianoRollControl),
+            new FrameworkPropertyMetadata(true, (d, e) =>
+            {
+                if (d is InteractivePianoRollControl ctrl)
+                {
+                    var enabled = (bool)e.NewValue;
+                    if (ctrl.PianoRoll != null) ctrl.PianoRoll.KeyMarkersEnabled = enabled;
+                    if (ctrl.Timeline != null) ctrl.Timeline.KeyMarkersEnabled = enabled;
+                    ctrl.UpdateNotePitches();
+                }
+            }));
+
+    public bool KeyMarkersEnabled
+    {
+        get => (bool)GetValue(KeyMarkersEnabledProperty);
+        set => SetValue(KeyMarkersEnabledProperty, value);
+    }
+
     public static readonly DependencyProperty SelectedMarkerProperty =
         DependencyProperty.Register(
             nameof(SelectedMarker),

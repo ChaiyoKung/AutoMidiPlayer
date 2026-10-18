@@ -448,6 +448,34 @@ public class TimelineCanvas : FrameworkElement
         set => SetValue(KeyChangeMarkersProperty, value);
     }
 
+    public static readonly DependencyProperty KeyMarkersEnabledProperty =
+        DependencyProperty.Register(
+            nameof(KeyMarkersEnabled),
+            typeof(bool),
+            typeof(TimelineCanvas),
+            new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender, OnKeyMarkersEnabledChanged));
+
+    private static void OnKeyMarkersEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is TimelineCanvas canvas)
+        {
+            if (canvas.DisplayMode == PianoRollDisplayMode.Auto)
+            {
+                canvas.UpdateNotePitches();
+            }
+            else
+            {
+                canvas.InvalidateVisualCache();
+            }
+        }
+    }
+
+    public bool KeyMarkersEnabled
+    {
+        get => (bool)GetValue(KeyMarkersEnabledProperty);
+        set => SetValue(KeyMarkersEnabledProperty, value);
+    }
+
     public static readonly DependencyProperty SelectedMarkerProperty =
         DependencyProperty.Register(
             nameof(SelectedMarker),
@@ -840,6 +868,12 @@ public class TimelineCanvas : FrameworkElement
             var markers = KeyChangeMarkers;
             if (markers != null)
             {
+                var isMarkersEnabled = KeyMarkersEnabled;
+                if (!isMarkersEnabled)
+                {
+                    dc.PushOpacity(0.35);
+                }
+
                 var accentBrush = TrackColorPalette.GetBrush(0, 1);
                 var accentPen = new Pen(accentBrush, 2);
                 accentPen.Freeze();
@@ -872,6 +906,11 @@ public class TimelineCanvas : FrameworkElement
 
                     dc.DrawRectangle(brush, pen, badgeRect);
                     dc.DrawText(formatted, new Point(badgeRect.X + 4, badgeRect.Y + 1));
+                }
+
+                if (!isMarkersEnabled)
+                {
+                    dc.Pop();
                 }
             }
         }

@@ -342,6 +342,25 @@
                                                      VerticalAlignment="Center" />
                                 </Grid>
                             </Border>
+                            <!-- Key Markers Toggle -->
+                            <Border Margin="0,0,0,8"
+                                    Padding="8,6"
+                                    Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                    CornerRadius="6">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Key Change Markers" FontWeight="SemiBold" FontSize="12" />
+                                        <TextBlock Text="Apply timeline key offset changes" FontSize="10" Opacity="0.7" />
+                                    </StackPanel>
+                                    <ui:ToggleSwitch Grid.Column="1"
+                                                     IsChecked="{Binding KeyMarkersEnabled, Mode=TwoWay}"
+                                                     VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>

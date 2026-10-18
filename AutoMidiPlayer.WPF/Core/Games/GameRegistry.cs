@@ -80,7 +80,7 @@ public static class GameRegistry
             displayName: "Blue Protocol: Star Resonance",
             instrumentGameName: "BPSR",
             imageResourcePath: "pack://application:,,,/Resources/Images/Games/BPSR.png",
-            processNames: ["BPSR"],
+            processNames: ["BPSR", "StarSEA_STEAM"],
             getLocation: () => Settings.BPSRLocation,
             setLocation: v => Settings.Modify(s => s.BPSRLocation = v),
             getIsActive: () => Settings.ActiveBPSR,

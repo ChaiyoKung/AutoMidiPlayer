@@ -21,7 +21,7 @@
 ### Supported Games and Instruments
 - **Genshin Impact** - All 11 instruments as of August 2026
 - **Wuthering Waves** - 21-key instruments (shared QWERTY mapping)
-- **Neverness to Everness (NTE)** - Piano (21-key & 36-key)
+- **Neverness to Everness (NTE)** - Piano (21-key & 36-key), Guitar
 - **Where Winds Meet** - Guqin
 - **Blue Protocol: Star Resonance** - Piano (61-key & 88-key)
 - **Sky: Children of the Light** - All available Sky instruments as of February 2026

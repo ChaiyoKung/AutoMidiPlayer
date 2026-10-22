@@ -357,6 +357,11 @@ public static class Keyboard
                     keyStrokes.Add(new KeyStroke(VirtualKeyCode.SPACE, modifiers));
                 }
             }
+            // Check for special named keys
+            else if (string.Equals(element, "Enter", StringComparison.OrdinalIgnoreCase))
+            {
+                keyStrokes.Add(new KeyStroke(VirtualKeyCode.RETURN));
+            }
             else
             {
                 // Multi-character element (more than 2 chars or doesn't match pattern)
@@ -610,6 +615,10 @@ public static class Keyboard
             if (kvp.Value.Key == keyStroke.Key && kvp.Value.Modifiers == keyStroke.Modifiers)
                 return kvp.Key.ToString();
         }
+
+        // Special keys not in the character map
+        if (keyStroke.Key == VirtualKeyCode.RETURN)
+            return "Enter";
 
         // If exact match not found (e.g. Ctrl modifier), build from the base key
         var hasCtrl = (keyStroke.Modifiers & KeyModifiers.Ctrl) != 0;

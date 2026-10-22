@@ -55,6 +55,9 @@ public enum VirtualKeyCode : ushort
     VK_Y = 0x59,
     VK_Z = 0x5A,
 
+    // Special keys
+    RETURN    = 0x0D,  // Enter
+
     // OEM keys (US standard keyboard)
     OEM_1      = 0xBA,  // ;:
     OEM_PLUS   = 0xBB,  // =+

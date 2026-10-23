@@ -25,6 +25,10 @@ public class UpdateProgressInfo
 
 public class UpdateService
 {
+    public static bool RequiresManualUpdate(GitVersion version) => version.Version.Major >= 8;
+
+    private const string ManualUpdateMessage = "Version 8 and later must be downloaded manually from the releases page.";
+
     public event EventHandler<(bool Success, string Version, string ErrorMessage)>? BackgroundDownloadCompleted;
     public event EventHandler<GitVersion>? UpdateAvailable;
 
@@ -88,6 +92,9 @@ public class UpdateService
 
     public async Task BackgroundDownloadUpdateAsyncWrapper(GitVersion version)
     {
+        // The rewritten app cannot be installed by the legacy updater.
+        if (RequiresManualUpdate(version)) return;
+
         try
         {
             var versionType = AutoMidiPlayer.Data.AppPaths.IsNetInstall ? "Net-Install" : "Portable";
@@ -132,6 +139,8 @@ public class UpdateService
 
     public async Task<(bool Success, string ErrorMessage)> BackgroundDownloadUpdateAsync(GitVersion latestVersion, string selectedVersionType)
     {
+        if (RequiresManualUpdate(latestVersion)) return (false, ManualUpdateMessage);
+
         try
         {
             var assetNameSearch = selectedVersionType == "Portable" ? "win-x64-portable.zip" : "win-x64-net-install.zip";
@@ -205,6 +214,9 @@ public class UpdateService
 
     public async Task RunUpdateAsync(GitVersion latestVersion, string selectedVersionType, bool clearAppData, bool forceRedownload, IProgress<UpdateProgressInfo>? progress)
     {
+        if (RequiresManualUpdate(latestVersion))
+            throw new InvalidOperationException(ManualUpdateMessage);
+
         var assetNameSearch = selectedVersionType == "Portable" ? "win-x64-portable.zip" : "win-x64-net-install.zip";
         var tempDir = AppPaths.UpdateCacheDirectory;
         var zipPath = Path.Combine(tempDir, "update.zip");

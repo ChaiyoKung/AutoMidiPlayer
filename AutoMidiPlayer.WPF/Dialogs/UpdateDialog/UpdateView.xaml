@@ -10,7 +10,7 @@
     </UserControl.Resources>
     
     <StackPanel Background="Transparent" Margin="0" Width="420">
-        <WrapPanel Margin="0,0,0,8">
+        <WrapPanel Margin="0,0,0,8" Visibility="{Binding CanInstallInApp, Converter={StaticResource BoolToVis}}">
             <StackPanel Margin="0,0,24,12" Width="180">
                 <TextBlock Text="Version Type" Margin="0,0,0,4" FontWeight="SemiBold"/>
                 <button:StandardDropdown ItemsSource="{Binding VersionTypes}" 

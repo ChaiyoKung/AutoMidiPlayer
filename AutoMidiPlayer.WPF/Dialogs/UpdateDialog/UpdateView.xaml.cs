@@ -31,10 +31,21 @@ public partial class UpdateView : UserControl, INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    public bool CanInstallInApp => !UpdateService.RequiresManualUpdate(_latestVersion);
+
     public string UpdateMessage
     {
         get
         {
+            if (!CanInstallInApp)
+            {
+                return $"Version {_latestVersion.Version} is a rewrite in Rust, Tauri, and Svelte and includes breaking changes. " +
+                       "This update must be downloaded and installed manually from the releases page.\n\n" +
+                       "Your data will be migrated to the rewritten app. Once migration is complete, feel free to delete this legacy app's folder if you no longer need it.\n\n" +
+                       "Some features from the original app, including Discover, are not available yet and will be added in future updates.\n\n" +
+                       "Click \"Open releases page\" below to download the rewrite.";
+            }
+
             var assetNameSearch = SelectedVersionType == "Portable" ? "win-x64-portable.zip" : "win-x64-net-install.zip";
             var asset = _latestVersion.Assets.FirstOrDefault(a => a.Name.Contains(assetNameSearch, StringComparison.OrdinalIgnoreCase));
             
@@ -162,15 +173,15 @@ public partial class UpdateView : UserControl, INotifyPropertyChanged
             var view = new UpdateView(latestVersion, updateService);
             var request = new DialogActionRequest
             {
-                Title = "Update Available",
+                Title = view.CanInstallInApp ? "Update Available" : "Manual Update Required",
                 Icon = SymbolRegular.ArrowDownload24,
                 Content = view,
                 ConfirmButton = new DialogActionButton
                 {
-                    Text = "Install update",
+                    Text = view.CanInstallInApp ? "Install update" : "Open releases page",
                     Appearance = ControlAppearance.Primary
                 },
-                CustomButton = new DialogActionButton
+                CustomButton = view.CanInstallInApp ? new DialogActionButton
                 {
                     Text = "Release Notes",
                     Appearance = ControlAppearance.Secondary,
@@ -179,7 +190,7 @@ public partial class UpdateView : UserControl, INotifyPropertyChanged
                         view.OpenReleaseNotes();
                         return Task.FromResult(false); // Don't close the dialog
                     }
-                },
+                } : null,
                 CancelButton = new DialogActionButton
                 {
                     Text = "Cancel",
@@ -190,7 +201,10 @@ public partial class UpdateView : UserControl, INotifyPropertyChanged
             var result = await DialogHelper.ShowActionDialogAsync(request);
             if (result == DialogActionOutcome.Confirmed)
             {
-                await view.RunUpdateAsync();
+                if (view.CanInstallInApp)
+                    await view.RunUpdateAsync();
+                else
+                    view.OpenReleaseNotes();
             }
         }
         catch (Exception dialogError)
